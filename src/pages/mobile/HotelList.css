@@ -1,0 +1,226 @@
+.hotel-list-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding-bottom: 20px;
+}
+
+/* 筛选区域 */
+.filter-section {
+  background: white;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.search-box {
+  padding: 12px;
+}
+
+.filter-bar {
+  border-top: 1px solid #f0f0f0;
+}
+
+/* 结果提示 */
+.result-tip {
+  padding: 12px 16px;
+  font-size: 14px;
+  color: #666;
+  background: white;
+  margin-bottom: 8px;
+}
+
+.result-tip .highlight {
+  color: #1677ff;
+  font-weight: bold;
+}
+
+/* 排序选项 */
+.sort-option {
+  padding: 12px 16px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.sort-option:hover {
+  background: #f5f5f5;
+}
+
+.sort-option.active {
+  background: #e6f4ff;
+  color: #1677ff;
+  font-weight: 500;
+}
+
+/* 酒店列表 */
+.hotel-list {
+  padding: 0 12px;
+}
+
+/* 酒店卡片 */
+.hotel-card {
+  margin-bottom: 12px;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.hotel-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.card-content {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+}
+
+/* 酒店图片 */
+.hotel-image {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  flex-shrink: 0;
+}
+
+.hotel-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.promotion-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: linear-gradient(135deg, #ff6b6b, #ff5252);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+/* 酒店信息 */
+.hotel-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.hotel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 6px;
+}
+
+.hotel-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+  line-height: 1.4;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.hotel-stars {
+  font-size: 12px;
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+.hotel-location {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hotel-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.hotel-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+/* 评分 */
+.rating-section {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.rating-score {
+  font-size: 18px;
+  font-weight: bold;
+  color: #1677ff;
+}
+
+.rating-text {
+  font-size: 12px;
+  color: #1677ff;
+}
+
+.review-count {
+  font-size: 11px;
+  color: #999;
+}
+
+/* 价格 */
+.price-section {
+  display: flex;
+  align-items: baseline;
+  color: #ff6b6b;
+}
+
+.price-label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.price-value {
+  font-size: 24px;
+  font-weight: bold;
+  margin: 0 2px;
+}
+
+.price-unit {
+  font-size: 12px;
+}
+
+/* 响应式 */
+@media (max-width: 375px) {
+  .hotel-image {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .hotel-name {
+    font-size: 15px;
+  }
+  
+  .price-value {
+    font-size: 20px;
+  }
+}
