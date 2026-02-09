@@ -867,6 +867,220 @@ export const hotelsData = [
       description: "本周特惠85折"
     },
     status: "approved"
+  },
+
+    // 南京酒店
+  {
+    id: 21,
+    name: "南京金陵饭店",
+    nameEn: "Jinling Hotel Nanjing",
+    address: "江苏省南京市鼓楼区汉中路2号",
+    star: 5,
+    rating: 4.7,
+    reviewCount: 1678,
+    openDate: "1983-10-01",
+    phone: "025-84711888",
+    location: {
+      lat: 32.0465,
+      lng: 118.7780,
+      district: "鼓楼区",
+      subway: "地铁1号线珠江路站",
+      nearbyAttractions: ["新街口", "玄武湖", "总统府"]
+    },
+    images: [
+      "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800"
+    ],
+    rooms: [
+      {
+        id: 2101,
+        type: "豪华客房",
+        size: "38㎡",
+        bedType: "1张大床",
+        maxGuests: 2,
+        price: 888,
+        originalPrice: 1088,
+        breakfast: true,
+        wifi: true,
+        cancelPolicy: "免费取消",
+        stock: 8
+      }
+    ],
+    facilities: ["免费WiFi", "停车场", "健身房", "餐厅"],
+    tags: ["老牌五星", "商务", "市中心"],
+    promotion: null,
+    status: "approved"
+  },
+
+  // 苏州酒店
+  {
+    id: 22,
+    name: "苏州金鸡湖凯宾斯基大酒店",
+    nameEn: "Kempinski Hotel Suzhou",
+    address: "江苏省苏州市工业园区湖东路288号",
+    star: 5,
+    rating: 4.8,
+    reviewCount: 2134,
+    openDate: "2012-09-28",
+    phone: "0512-62888888",
+    location: {
+      lat: 31.3157,
+      lng: 120.6891,
+      district: "工业园区",
+      subway: "地铁1号线东方之门站",
+      nearbyAttractions: ["金鸡湖", "诚品书店", "苏州中心"]
+    },
+    images: [
+      "https://images.unsplash.com/photo-1596436889106-be35e843f974?w=800"
+    ],
+    rooms: [
+      {
+        id: 2201,
+        type: "湖景大床房",
+        size: "45㎡",
+        bedType: "1张特大床",
+        maxGuests: 2,
+        price: 1188,
+        originalPrice: 1488,
+        breakfast: true,
+        wifi: true,
+        cancelPolicy: "免费取消",
+        stock: 6
+      }
+    ],
+    facilities: ["免费WiFi", "停车场", "游泳池", "健身房", "SPA"],
+    tags: ["湖景", "豪华", "度假"],
+    promotion: null,
+    status: "approved"
+  },
+
+  // 西安酒店
+  {
+    id: 23,
+    name: "西安威斯汀大酒店",
+    nameEn: "The Westin Xi'an",
+    address: "陕西省西安市雁塔区雁塔路66号",
+    star: 5,
+    rating: 4.6,
+    reviewCount: 1567,
+    openDate: "2011-06-15",
+    phone: "029-87686688",
+    location: {
+      lat: 34.2228,
+      lng: 108.9531,
+      district: "雁塔区",
+      subway: "地铁3号线大雁塔站",
+      nearbyAttractions: ["大雁塔", "大唐不夜城", "陕西历史博物馆"]
+    },
+    images: [
+      "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800"
+    ],
+    rooms: [
+      {
+        id: 2301,
+        type: "豪华客房",
+        size: "42㎡",
+        bedType: "1张大床",
+        maxGuests: 2,
+        price: 788,
+        originalPrice: 988,
+        breakfast: true,
+        wifi: true,
+        cancelPolicy: "免费取消",
+        stock: 10
+      }
+    ],
+    facilities: ["免费WiFi", "停车场", "健身房", "餐厅", "会议室"],
+    tags: ["商务", "大雁塔", "地铁沿线"],
+    promotion: null,
+    status: "approved"
+  },
+
+  // 厦门酒店
+  {
+    id: 24,
+    name: "厦门海悦山庄酒店",
+    nameEn: "Xiamen Seaview Resort",
+    address: "福建省厦门市思明区环岛南路2688号",
+    star: 5,
+    rating: 4.9,
+    reviewCount: 2789,
+    openDate: "2008-08-08",
+    phone: "0592-2099888",
+    location: {
+      lat: 24.4426,
+      lng: 118.0936,
+      district: "思明区",
+      subway: "临近环岛路",
+      nearbyAttractions: ["曾厝垵", "白城沙滩", "环岛路"]
+    },
+    images: [
+      "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800"
+    ],
+    rooms: [
+      {
+        id: 2401,
+        type: "海景套房",
+        size: "68㎡",
+        bedType: "1张特大床+客厅",
+        maxGuests: 3,
+        price: 1888,
+        originalPrice: 2388,
+        breakfast: true,
+        wifi: true,
+        cancelPolicy: "免费取消",
+        stock: 4
+      }
+    ],
+    facilities: ["免费WiFi", "停车场", "私人沙滩", "游泳池", "健身房", "SPA"],
+    tags: ["海景", "度假", "浪漫"],
+    promotion: {
+      type: "蜜月套餐",
+      discount: 0.85,
+      description: "蜜月专享，享85折优惠"
+    },
+    status: "approved"
+  },
+
+  // 武汉酒店
+  {
+    id: 25,
+    name: "武汉万达瑞华酒店",
+    nameEn: "Wanda Reign Wuhan",
+    address: "湖北省武汉市武昌区临江大道96号",
+    star: 5,
+    rating: 4.7,
+    reviewCount: 1890,
+    openDate: "2014-12-20",
+    phone: "027-82605888",
+    location: {
+      lat: 30.5561,
+      lng: 114.2937,
+      district: "武昌区",
+      subway: "地铁4号线复兴路站",
+      nearbyAttractions: ["黄鹤楼", "户部巷", "长江大桥"]
+    },
+    images: [
+      "https://images.unsplash.com/photo-1596436889106-be35e843f974?w=800"
+    ],
+    rooms: [
+      {
+        id: 2501,
+        type: "行政大床房",
+        size: "48㎡",
+        bedType: "1张特大床",
+        maxGuests: 2,
+        price: 988,
+        originalPrice: 1288,
+        breakfast: true,
+        wifi: true,
+        cancelPolicy: "免费取消",
+        stock: 7
+      }
+    ],
+    facilities: ["免费WiFi", "停车场", "健身房", "游泳池", "餐厅"],
+    tags: ["江景", "商务", "黄鹤楼"],
+    promotion: null,
+    status: "approved"
   }
 ]
 

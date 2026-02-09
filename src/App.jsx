@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import './App.css'
 
 // 移动端页面
@@ -18,30 +18,22 @@ function App() {
       <div className="App">
         <h1>易宿酒店预订平台 🏨</h1>
         
-        {/* 导航菜单 - 方便测试 */}
-        <nav style={{ margin: '20px', padding: '10px', background: '#f0f0f0' }}>
-          <h3>移动端页面：</h3>
-          <Link to="/" style={{ margin: '0 10px' }}>首页</Link>
-          <Link to="/list" style={{ margin: '0 10px' }}>列表</Link>
-          <Link to="/detail/1" style={{ margin: '0 10px' }}>详情</Link>
-          
-          <h3>PC端页面：</h3>
-          <Link to="/login" style={{ margin: '0 10px' }}>登录</Link>
-          <Link to="/manage" style={{ margin: '0 10px' }}>管理</Link>
-          <Link to="/audit" style={{ margin: '0 10px' }}>审核</Link>
-        </nav>
+        {/* 移除测试导航，让每个页面独立管理自己的导航 */}
 
         {/* 路由配置 */}
         <Routes>
-          {/* 移动端路由 */}
-          <Route path="/" element={<HomePage />} />
-          <Route path="/list" element={<HotelList />} />
-          <Route path="/detail/:id" element={<HotelDetail />} />
-          
-          {/* PC端路由 */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/manage" element={<HotelManage />} />
-          <Route path="/audit" element={<HotelAudit />} />
+            {/* 移动端路由 - 默认首页 */}
+            <Route path="/" element={<HomePage />} />
+            <Route path="/list" element={<HotelList />} />
+            <Route path="/detail/:id" element={<HotelDetail />} />
+            
+            {/* PC端路由 */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/manage" element={<HotelManage />} />
+            <Route path="/audit" element={<HotelAudit />} />
+            
+            {/* 404 重定向到首页 */}
+            <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
     </BrowserRouter>

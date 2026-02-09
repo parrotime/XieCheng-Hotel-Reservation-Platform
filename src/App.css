@@ -1,3 +1,14 @@
+/* App 全局样式 */
+.App {
+  background: #2c3e50;  /* 深色背景，突出手机屏幕效果 */
+  min-height: 100vh;
+}
+
+/* 移除顶部标题 */
+.App > h1 {
+  display: none;  /* 隐藏测试用的大标题 */
+}
+
 #root {
   max-width: 1280px;
   margin: 0 auto;

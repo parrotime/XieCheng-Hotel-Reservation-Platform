@@ -7,10 +7,13 @@ import {
   DatePicker,
   Selector,
   Tag,
-  Toast
+  Toast,
+  CascadePicker,
+  Slider  // 新增
 } from 'antd-mobile'
 import { EnvironmentOutline, CalendarOutline } from 'antd-mobile-icons'
 import { hotCities } from '../../data/cities'
+import { allCities } from '../../data/allCities'  // 新增
 import './HomePage.css'
 
 function HomePage() {
@@ -24,29 +27,37 @@ function HomePage() {
   const [selectedStar, setSelectedStar] = useState([])
   const [selectedTags, setSelectedTags] = useState([])
   const [priceRange, setPriceRange] = useState([])
-  
+  const [priceSlider, setPriceSlider] = useState([0, 5000])  // 新增：滑块价格
+  const [cityPickerVisible, setCityPickerVisible] = useState(false)
+  const [citySearchKey, setCitySearchKey] = useState('')
+  const [locating, setLocating] = useState(false)  // 新增：定位中状态
+
   // 日期选择器可见性控制
   const [checkInVisible, setCheckInVisible] = useState(false)
   const [checkOutVisible, setCheckOutVisible] = useState(false)
   
   // Banner 数据
+  // Banner 数据
   const banners = [
     {
       id: 1,
       image: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=1200&h=400&fit=crop',
-      title: '春节特惠',
+      title: '上海外滩华尔道夫酒店',
+      subtitle: '外滩江景 · 奢华体验',
       hotelId: 1
     },
     {
       id: 2,
       image: 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=1200&h=400&fit=crop',
-      title: '豪华酒店',
+      title: '上海浦东丽思卡尔顿酒店',
+      subtitle: '陆家嘴地标 · 高端商务',
       hotelId: 2
     },
     {
       id: 3,
       image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=1200&h=400&fit=crop',
-      title: '度假首选',
+      title: '杭州西湖凯悦酒店',
+      subtitle: '西湖美景 · 度假首选',
       hotelId: 3
     }
   ]
@@ -178,16 +189,124 @@ function HomePage() {
     navigate(`/detail/${hotelId}`)
   }
 
+  // 定位当前城市 - 新增
+  const handleLocationClick = () => {
+    if (!navigator.geolocation) {
+      Toast.show({
+        icon: 'fail',
+        content: '您的浏览器不支持定位功能',
+      })
+      return
+    }
+    
+    setLocating(true)
+    
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords
+        
+        try {
+          // 使用高德地图逆地理编码API（免费，无需key也能用，但有限制）
+          const response = await fetch(
+            `https://restapi.amap.com/v3/geocode/regeo?location=${longitude},${latitude}&key=&extensions=base&output=json`
+          )
+          const data = await response.json()
+          
+          if (data.status === '1' && data.regeocode) {
+            const city = data.regeocode.addressComponent.city || 
+                        data.regeocode.addressComponent.province
+            
+            // 去掉"市"字
+            const cityName = city.replace(/市$/, '')
+            
+            setSelectedCity(cityName)
+            Toast.show({
+              icon: 'success',
+              content: `定位成功：${cityName}`,
+            })
+          } else {
+            // API失败时使用备用方案：根据经纬度粗略判断
+            const cityName = getCityByCoordinates(latitude, longitude)
+            setSelectedCity(cityName)
+            Toast.show({
+              icon: 'success',
+              content: `定位成功：${cityName}`,
+            })
+          }
+        } catch (error) {
+          console.error('定位失败:', error)
+          Toast.show({
+            icon: 'fail',
+            content: '定位失败，请手动选择城市',
+          })
+        } finally {
+          setLocating(false)
+        }
+      },
+      (error) => {
+        console.error('定位错误:', error)
+        setLocating(false)
+        
+        let errorMsg = '定位失败'
+        if (error.code === 1) {
+          errorMsg = '您拒绝了定位权限'
+        } else if (error.code === 2) {
+          errorMsg = '无法获取位置信息'
+        } else if (error.code === 3) {
+          errorMsg = '定位超时'
+        }
+        
+        Toast.show({
+          icon: 'fail',
+          content: errorMsg,
+        })
+      },
+      {
+        timeout: 10000,
+        enableHighAccuracy: true
+      }
+    )
+  }
+
+  // 根据经纬度粗略判断城市（备用方案）
+  const getCityByCoordinates = (lat, lng) => {
+    // 中国主要城市的大致经纬度范围
+    const cityRanges = [
+      { name: '北京', lat: [39.4, 41.1], lng: [115.7, 117.4] },
+      { name: '上海', lat: [30.7, 31.5], lng: [121.0, 122.0] },
+      { name: '广州', lat: [22.5, 23.5], lng: [113.0, 114.0] },
+      { name: '深圳', lat: [22.4, 22.8], lng: [113.7, 114.6] },
+      { name: '杭州', lat: [29.9, 30.6], lng: [119.7, 120.9] },
+      { name: '成都', lat: [30.1, 31.4], lng: [103.5, 104.9] },
+    ]
+    
+    for (const city of cityRanges) {
+      if (lat >= city.lat[0] && lat <= city.lat[1] && 
+          lng >= city.lng[0] && lng <= city.lng[1]) {
+        return city.name
+      }
+    }
+    
+    return '上海' // 默认返回上海
+  }
+
   return (
     <div className="home-page">
       {/* 顶部 Banner */}
       <div className="banner-section">
         <Swiper
-          autoplay
-          loop
+          autoplay={{ delay: 3000 }}          // 自动播放，3秒间隔
+          loop                                // 循环播放
+          allowTouchMove={true}               // 允许手动滑动（手指左右滑）
           style={{
             '--border-radius': '8px',
           }}
+          // 如果你本来就要加指示器，可以继续写在这里；如果暂时不要可以先删掉或注释
+          indicator={(total, current) => (
+            <div className="custom-indicator">
+              {current + 1} / {total}
+            </div>
+          )}
         >
           {banners.map(banner => (
             <Swiper.Item key={banner.id}>
@@ -196,7 +315,10 @@ function HomePage() {
                 onClick={() => handleBannerClick(banner.hotelId)}
               >
                 <img src={banner.image} alt={banner.title} />
-                <div className="banner-title">{banner.title}</div>
+                <div className="banner-content">
+                  <div className="banner-title">{banner.title}</div>
+                  <div className="banner-subtitle">{banner.subtitle}</div>
+                </div>
               </div>
             </Swiper.Item>
           ))}
@@ -212,6 +334,8 @@ function HomePage() {
           <div className="search-label">
             <EnvironmentOutline /> 当前地点
           </div>
+          
+          {/* 热门城市快捷选择 */}
           <Selector
             options={hotCities.map(city => ({
               label: city.name,
@@ -221,7 +345,66 @@ function HomePage() {
             onChange={(arr) => setSelectedCity(arr[0])}
             style={{ '--border-radius': '8px' }}
           />
+          
+          {/* 更多城市按钮 */}
+          <Button 
+            block 
+            fill="outline"
+            style={{ marginTop: '12px' }}
+            onClick={() => setCityPickerVisible(true)}
+          >
+            选择其他城市
+          </Button>
+
+          {/* 定位按钮 - 新增 */}
+          <Button 
+            block 
+            color="primary"
+            fill="outline"
+            loading={locating}
+            style={{ marginTop: '12px' }}
+            onClick={handleLocationClick}
+          >
+            {locating ? '定位中...' : '📍 定位当前城市'}
+          </Button>
+
         </div>
+
+        {/* 城市选择弹窗 */}
+        <CascadePicker
+          title="选择城市"
+          visible={cityPickerVisible}
+          onClose={() => setCityPickerVisible(false)}
+          options={[
+            {
+              label: '热门城市',
+              value: 'hot',
+              children: hotCities.map(c => ({ label: c.name, value: c.name }))
+            },
+            {
+              label: '全部城市',
+              value: 'all',
+              children: allCities
+                .reduce((acc, city) => {
+                  const province = acc.find(p => p.label === city.province)
+                  if (province) {
+                    province.children.push({ label: city.name, value: city.name })
+                  } else {
+                    acc.push({
+                      label: city.province,
+                      value: city.province,
+                      children: [{ label: city.name, value: city.name }]
+                    })
+                  }
+                  return acc
+                }, [])
+            }
+          ]}
+          onConfirm={(value) => {
+            setSelectedCity(value[value.length - 1])
+            setCityPickerVisible(false)
+          }}
+        />
 
         {/* 关键字搜索 */}
         <div className="search-item">
@@ -277,6 +460,21 @@ function HomePage() {
           title="选择退房日期"
         />
 
+        {/* 显示入住天数 */}
+        {checkInDate && checkOutDate && (
+          <div style={{ 
+            marginTop: '12px', 
+            padding: '8px 12px', 
+            background: '#e6f4ff', 
+            borderRadius: '8px',
+            textAlign: 'center',
+            fontSize: '14px',
+            color: '#1677ff'
+          }}>
+            📅 共入住 {Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24))} 晚
+          </div>
+        )}
+
         {/* 筛选条件 - 星级 */}
         <div className="search-item">
           <div className="search-label">星级筛选</div>
@@ -290,14 +488,30 @@ function HomePage() {
         </div>
 
         {/* 价格区间 */}
+        {/* 价格区间 */}
         <div className="search-item">
           <div className="search-label">价格区间</div>
-          <Selector
-            options={priceOptions}
-            multiple
-            value={priceRange}
-            onChange={setPriceRange}
-            style={{ '--border-radius': '8px' }}
+          
+          {/* 显示当前价格 */}
+          <div style={{ 
+            marginBottom: '12px', 
+            fontSize: '16px', 
+            fontWeight: 'bold',
+            color: '#1677ff',
+            textAlign: 'center'
+          }}>
+            ¥{priceSlider[0]} - ¥{priceSlider[1]}
+          </div>
+          
+          {/* 价格滑块 */}
+          <Slider
+            range
+            min={0}
+            max={5000}
+            step={100}
+            value={priceSlider}
+            onChange={setPriceSlider}
+            style={{ '--fill-color': '#1677ff' }}
           />
         </div>
 
