@@ -19,6 +19,7 @@ import {
   StopOutlined
 } from '@ant-design/icons'
 import { useAuth } from '../../hooks/useAuth'
+import { getHotels as getHotelsApi, updateHotelStatus } from '../../api/hotels'
 import StarRating from '../../components/StarRating'
 import StatusTag from '../../components/StatusTag'
 import PageHeader from '../../components/PageHeader'
@@ -28,7 +29,7 @@ const { Content } = Layout
 const { TextArea } = Input
 
 function HotelAudit() {
-  const { userInfo, handleLogout } = useAuth('admin', '请先登录管理员账号')
+  const { userInfo, handleLogout } = useAuth('system_admin', '请先登录管理员账号')
   const [form] = Form.useForm()
 
   // 状态管理
@@ -38,10 +39,14 @@ function HotelAudit() {
   const [currentHotel, setCurrentHotel] = useState(null)
   const [filterStatus, setFilterStatus] = useState('all')
 
-  // 加载酒店数据
-  const loadHotels = () => {
-    const merchantHotels = JSON.parse(localStorage.getItem('merchantHotels') || '[]')
-    setHotels(merchantHotels)
+  // 加载酒店数据（管理员查看全部）
+  const loadHotels = async () => {
+    try {
+      const data = await getHotelsApi({ status: 'all', limit: 100 })
+      setHotels(data.hotels)
+    } catch (err) {
+      message.error('加载酒店数据失败')
+    }
   }
 
   useEffect(() => {
@@ -63,21 +68,14 @@ function HotelAudit() {
       content: `确定要通过《${hotel.name}》的审核吗？`,
       okText: '确定',
       cancelText: '取消',
-      onOk: () => {
-        const newHotels = hotels.map(h => 
-          h.id === hotel.id 
-            ? { 
-                ...h, 
-                status: 'approved',
-                auditBy: userInfo.username,
-                auditAt: new Date().toISOString(),
-                rejectReason: null
-              } 
-            : h
-        )
-        localStorage.setItem('merchantHotels', JSON.stringify(newHotels))
-        setHotels(newHotels)
-        message.success('审核通过')
+      onOk: async () => {
+        try {
+          await updateHotelStatus(hotel.id, { status: 'approved' })
+          message.success('审核通过')
+          loadHotels()
+        } catch (err) {
+          message.error(err.message || '操作失败')
+        }
       }
     })
   }
@@ -90,30 +88,22 @@ function HotelAudit() {
   }
   
   // 审核拒绝
-  const handleReject = (values) => {
+  const handleReject = async (values) => {
     const { reason } = values
-    
+
     if (!reason || reason.trim().length === 0) {
       message.error('请输入拒绝原因')
       return
     }
-    
-    const newHotels = hotels.map(h => 
-      h.id === currentHotel.id 
-        ? { 
-            ...h, 
-            status: 'rejected',
-            rejectReason: reason,
-            auditBy: userInfo.username,
-            auditAt: new Date().toISOString()
-          } 
-        : h
-    )
-    
-    localStorage.setItem('merchantHotels', JSON.stringify(newHotels))
-    setHotels(newHotels)
-    setRejectVisible(false)
-    message.success('已拒绝')
+
+    try {
+      await updateHotelStatus(currentHotel.id, { status: 'rejected', reject_reason: reason })
+      setRejectVisible(false)
+      message.success('已拒绝')
+      loadHotels()
+    } catch (err) {
+      message.error(err.message || '操作失败')
+    }
   }
   
   // 下线酒店
@@ -124,24 +114,18 @@ function HotelAudit() {
       okText: '确定',
       cancelText: '取消',
       okButtonProps: { danger: true },
-      onOk: () => {
-        const newHotels = hotels.map(h => 
-          h.id === hotel.id 
-            ? { 
-                ...h, 
-                status: 'offline',
-                offlineBy: userInfo.username,
-                offlineAt: new Date().toISOString()
-              } 
-            : h
-        )
-        localStorage.setItem('merchantHotels', JSON.stringify(newHotels))
-        setHotels(newHotels)
-        message.success('已下线')
+      onOk: async () => {
+        try {
+          await updateHotelStatus(hotel.id, { status: 'offline' })
+          message.success('已下线')
+          loadHotels()
+        } catch (err) {
+          message.error(err.message || '操作失败')
+        }
       }
     })
   }
-  
+
   // 重新上线
   const handleOnline = (hotel) => {
     Modal.confirm({
@@ -149,20 +133,14 @@ function HotelAudit() {
       content: `确定要将《${hotel.name}》重新上线吗？`,
       okText: '确定',
       cancelText: '取消',
-      onOk: () => {
-        const newHotels = hotels.map(h => 
-          h.id === hotel.id 
-            ? { 
-                ...h, 
-                status: 'approved',
-                onlineBy: userInfo.username,
-                onlineAt: new Date().toISOString()
-              } 
-            : h
-        )
-        localStorage.setItem('merchantHotels', JSON.stringify(newHotels))
-        setHotels(newHotels)
-        message.success('已上线')
+      onOk: async () => {
+        try {
+          await updateHotelStatus(hotel.id, { status: 'approved' })
+          message.success('已上线')
+          loadHotels()
+        } catch (err) {
+          message.error(err.message || '操作失败')
+        }
       }
     })
   }
@@ -182,8 +160,8 @@ function HotelAudit() {
     },
     {
       title: '星级',
-      dataIndex: 'star',
-      key: 'star',
+      dataIndex: 'star_rating',
+      key: 'star_rating',
       width: 100,
       render: (star) => <StarRating star={star} />
     },
@@ -195,14 +173,14 @@ function HotelAudit() {
     },
     {
       title: '创建者',
-      dataIndex: 'createdBy',
-      key: 'createdBy',
+      dataIndex: 'created_by_name',
+      key: 'created_by_name',
       width: 120,
     },
     {
       title: '创建时间',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
+      dataIndex: 'created_at',
+      key: 'created_at',
       width: 180,
       render: (time) => new Date(time).toLocaleString('zh-CN')
     },
@@ -214,9 +192,9 @@ function HotelAudit() {
       render: (status, record) => (
         <div>
           <StatusTag status={status} />
-          {status === 'rejected' && record.rejectReason && (
+          {status === 'rejected' && record.reject_reason && (
             <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
-              原因：{record.rejectReason}
+              原因：{record.reject_reason}
             </div>
           )}
         </div>
@@ -369,22 +347,19 @@ function HotelAudit() {
           <div>
             <Descriptions bordered column={2}>
               <Descriptions.Item label="酒店中文名">{currentHotel.name}</Descriptions.Item>
-              <Descriptions.Item label="酒店英文名">{currentHotel.nameEn}</Descriptions.Item>
-              <Descriptions.Item label="星级"><StarRating star={currentHotel.star} /></Descriptions.Item>
+              <Descriptions.Item label="酒店英文名">{currentHotel.name_en}</Descriptions.Item>
+              <Descriptions.Item label="星级"><StarRating star={currentHotel.star_rating} /></Descriptions.Item>
               <Descriptions.Item label="联系电话">{currentHotel.phone || '-'}</Descriptions.Item>
               <Descriptions.Item label="详细地址" span={2}>{currentHotel.address}</Descriptions.Item>
-              <Descriptions.Item label="所在区域">{currentHotel.location?.district || '-'}</Descriptions.Item>
-              <Descriptions.Item label="地铁信息">{currentHotel.location?.subway || '-'}</Descriptions.Item>
-              <Descriptions.Item label="开业时间">{currentHotel.openDate || '-'}</Descriptions.Item>
-              <Descriptions.Item label="创建者">{currentHotel.createdBy}</Descriptions.Item>
+              <Descriptions.Item label="城市">{currentHotel.city || '-'}</Descriptions.Item>
+              <Descriptions.Item label="省份">{currentHotel.province || '-'}</Descriptions.Item>
+              <Descriptions.Item label="创建者">{currentHotel.created_by_name}</Descriptions.Item>
+              <Descriptions.Item label="创建时间">{currentHotel.created_at ? new Date(currentHotel.created_at).toLocaleString('zh-CN') : '-'}</Descriptions.Item>
               <Descriptions.Item label="酒店设施" span={2}>
-                {currentHotel.facilities?.join('、') || '-'}
+                {Array.isArray(currentHotel.facilities) ? currentHotel.facilities.join('、') : '-'}
               </Descriptions.Item>
-              <Descriptions.Item label="酒店标签" span={2}>
-                {currentHotel.tags?.join('、') || '-'}
-              </Descriptions.Item>
-              <Descriptions.Item label="周边景点" span={2}>
-                {currentHotel.location?.nearbyAttractions?.join('、') || '-'}
+              <Descriptions.Item label="酒店描述" span={2}>
+                {currentHotel.description || '-'}
               </Descriptions.Item>
             </Descriptions>
             
@@ -395,17 +370,11 @@ function HotelAudit() {
               pagination={false}
               size="small"
               columns={[
-                { title: '房型', dataIndex: 'type', key: 'type' },
-                { title: '面积', dataIndex: 'size', key: 'size' },
-                { title: '床型', dataIndex: 'bedType', key: 'bedType' },
-                { title: '价格', dataIndex: 'price', key: 'price', render: (p) => `¥${p}` },
-                { title: '库存', dataIndex: 'stock', key: 'stock' },
-                { 
-                  title: '早餐', 
-                  dataIndex: 'breakfast', 
-                  key: 'breakfast',
-                  render: (b) => b ? '✓' : '✗'
-                }
+                { title: '房型', dataIndex: 'name', key: 'name' },
+                { title: '面积', dataIndex: 'area_sqm', key: 'area_sqm', render: (v) => v ? `${v}㎡` : '-' },
+                { title: '床型', dataIndex: 'bed_type', key: 'bed_type' },
+                { title: '价格', dataIndex: 'default_price', key: 'default_price', render: (p) => `¥${p}` },
+                { title: '最多入住', dataIndex: 'max_guests', key: 'max_guests' },
               ]}
             />
             
@@ -418,7 +387,7 @@ function HotelAudit() {
                       <Image
                         key={index}
                         width={150}
-                        src={img}
+                        src={typeof img === 'string' ? img : img.url}
                       />
                     ))}
                   </Space>

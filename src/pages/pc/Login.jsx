@@ -1,74 +1,71 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Form, Input, Button, Radio, Tabs, Card, message } from 'antd'
-import { UserOutlined, LockOutlined } from '@ant-design/icons'
+import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons'
+import { login as loginApi, register as registerApi } from '../../api/auth'
 import './Login.css'
+
+// 前端角色 → 后端角色映射
+const roleMap = { merchant: 'hotel_admin', admin: 'system_admin' }
 
 function Login() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('login')
-  
+  const [loading, setLoading] = useState(false)
+
   // 登录处理
-  const handleLogin = (values) => {
-    const { username, password, role } = values
-    
-    // 模拟登录验证
-    if (!username || !password) {
-      message.error('请填写完整信息')
-      return
-    }
-    
-    // 保存用户信息到 localStorage
-    const userInfo = {
-      username,
-      role,
-      loginTime: new Date().toISOString()
-    }
-    localStorage.setItem('userInfo', JSON.stringify(userInfo))
-    
-    message.success('登录成功！')
-    
-    // 根据角色跳转
-    if (role === 'merchant') {
-      navigate('/manage')
-    } else {
-      navigate('/audit')
+  const handleLogin = async (values) => {
+    const { username, password } = values
+    setLoading(true)
+    try {
+      const { token, user } = await loginApi(username, password)
+      localStorage.setItem('token', token)
+      localStorage.setItem('userInfo', JSON.stringify(user))
+      message.success('登录成功！')
+
+      // 根据后端返回的角色跳转
+      if (user.role === 'hotel_admin') {
+        navigate('/manage')
+      } else if (user.role === 'system_admin') {
+        navigate('/audit')
+      } else {
+        navigate('/')
+      }
+    } catch (err) {
+      message.error(err.message || '登录失败')
+    } finally {
+      setLoading(false)
     }
   }
-  
+
   // 注册处理
-  const handleRegister = (values) => {
-    const { username, password, confirmPassword, role } = values
-    
-    if (!username || !password || !confirmPassword) {
-      message.error('请填写完整信息')
-      return
-    }
-    
+  const handleRegister = async (values) => {
+    const { username, email, password, confirmPassword, role } = values
+
     if (password !== confirmPassword) {
       message.error('两次密码不一致')
       return
     }
-    
     if (password.length < 6) {
       message.error('密码至少6位')
       return
     }
-    
-    // 模拟注册成功，保存用户信息
-    const users = JSON.parse(localStorage.getItem('users') || '[]')
-    
-    // 检查用户名是否已存在
-    if (users.some(u => u.username === username)) {
-      message.error('用户名已存在')
-      return
+
+    setLoading(true)
+    try {
+      await registerApi({
+        username,
+        email,
+        password,
+        role: roleMap[role] || 'guest',
+      })
+      message.success('注册成功！请登录')
+      setActiveTab('login')
+    } catch (err) {
+      message.error(err.message || '注册失败')
+    } finally {
+      setLoading(false)
     }
-    
-    users.push({ username, password, role })
-    localStorage.setItem('users', JSON.stringify(users))
-    
-    message.success('注册成功！请登录')
-    setActiveTab('login')
   }
   
   return (
@@ -92,46 +89,34 @@ function Login() {
                   <Form
                     name="login"
                     onFinish={handleLogin}
-                    initialValues={{ role: 'merchant' }}
                     size="large"
                   >
-                    <Form.Item
-                      name="role"
-                      label="账户类型"
-                      rules={[{ required: true, message: '请选择账户类型' }]}
-                    >
-                      <Radio.Group>
-                        <Radio value="merchant">商户</Radio>
-                        <Radio value="admin">管理员</Radio>
-                      </Radio.Group>
-                    </Form.Item>
-                    
                     <Form.Item
                       name="username"
                       rules={[{ required: true, message: '请输入用户名' }]}
                     >
-                      <Input 
-                        prefix={<UserOutlined />} 
-                        placeholder="用户名" 
+                      <Input
+                        prefix={<UserOutlined />}
+                        placeholder="用户名"
                       />
                     </Form.Item>
-                    
+
                     <Form.Item
                       name="password"
                       rules={[{ required: true, message: '请输入密码' }]}
                     >
-                      <Input.Password 
-                        prefix={<LockOutlined />} 
-                        placeholder="密码" 
+                      <Input.Password
+                        prefix={<LockOutlined />}
+                        placeholder="密码"
                       />
                     </Form.Item>
-                    
+
                     <Form.Item>
-                      <Button type="primary" htmlType="submit" block>
+                      <Button type="primary" htmlType="submit" block loading={loading}>
                         登录
                       </Button>
                     </Form.Item>
-                    
+
                     <div className="login-tips">
                       <p>💡 演示账号：</p>
                       <p>商户 - 用户名: merchant / 密码: 123456</p>
@@ -165,12 +150,25 @@ function Login() {
                       name="username"
                       rules={[{ required: true, message: '请输入用户名' }]}
                     >
-                      <Input 
-                        prefix={<UserOutlined />} 
-                        placeholder="用户名" 
+                      <Input
+                        prefix={<UserOutlined />}
+                        placeholder="用户名"
                       />
                     </Form.Item>
-                    
+
+                    <Form.Item
+                      name="email"
+                      rules={[
+                        { required: true, message: '请输入邮箱' },
+                        { type: 'email', message: '邮箱格式不正确' }
+                      ]}
+                    >
+                      <Input
+                        prefix={<MailOutlined />}
+                        placeholder="邮箱"
+                      />
+                    </Form.Item>
+
                     <Form.Item
                       name="password"
                       rules={[{ required: true, message: '请输入密码' }]}
@@ -192,7 +190,7 @@ function Login() {
                     </Form.Item>
                     
                     <Form.Item>
-                      <Button type="primary" htmlType="submit" block>
+                      <Button type="primary" htmlType="submit" block loading={loading}>
                         注册
                       </Button>
                     </Form.Item>

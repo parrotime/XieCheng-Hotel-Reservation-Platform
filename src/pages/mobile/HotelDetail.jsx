@@ -7,7 +7,6 @@ import {
   Card,
   Button,
   Toast,
-  Divider,
   Collapse
 } from 'antd-mobile'
 import {
@@ -16,7 +15,7 @@ import {
   PhoneFill,
   CheckCircleFill
 } from 'antd-mobile-icons'
-import { getHotelById } from '../../data/hotels'
+import { getHotelById } from '../../api/hotels'
 import { useDateRange } from '../../hooks/useDateRange'
 import { formatDate } from '../../utils/dateUtils'
 import StarRating from '../../components/StarRating'
@@ -38,13 +37,16 @@ function HotelDetail() {
 
   // 加载酒店数据
   useEffect(() => {
-    const hotelData = getHotelById(id)
-    if (hotelData) {
-      setHotel(hotelData)
-    } else {
-      Toast.show({ icon: 'fail', content: '酒店不存在' })
-      setTimeout(() => navigate('/list'), 1500)
+    const fetchHotel = async () => {
+      try {
+        const data = await getHotelById(id)
+        setHotel(data)
+      } catch (err) {
+        Toast.show({ icon: 'fail', content: '酒店不存在' })
+        setTimeout(() => navigate('/list'), 1500)
+      }
     }
+    fetchHotel()
   }, [id, navigate])
 
   // 返回列表
@@ -85,11 +87,11 @@ function HotelDetail() {
       return
     }
 
-    const totalPrice = room.price * dateRange.nights
+    const totalPrice = room.default_price * dateRange.nights
 
     setConfirmData({
       hotelName: hotel.name,
-      roomType: room.type,
+      roomType: room.name,
       checkIn: formatDate(dateRange.checkInDate),
       checkOut: formatDate(dateRange.checkOutDate),
       nights: dateRange.nights,
@@ -197,10 +199,10 @@ function HotelDetail() {
             </div>
           )}
         >
-          {hotel.images.map((img, index) => (
+          {(hotel.images || []).map((img, index) => (
             <Swiper.Item key={index}>
               <div className="swiper-image-container">
-                <img src={img} alt={`${hotel.name}-${index + 1}`} />
+                <img src={typeof img === 'string' ? img : img.url} alt={`${hotel.name}-${index + 1}`} />
               </div>
             </Swiper.Item>
           ))}
@@ -213,25 +215,27 @@ function HotelDetail() {
           <div className="title-row">
             <h1 className="hotel-title">{hotel.name}</h1>
             <div className="hotel-star-badge">
-              <StarRating star={hotel.star} />
+              <StarRating star={hotel.star_rating} />
             </div>
           </div>
 
-          <p className="hotel-subtitle">{hotel.nameEn}</p>
+          <p className="hotel-subtitle">{hotel.name_en}</p>
 
           <RatingDisplay
             rating={hotel.rating}
-            reviewCount={hotel.reviewCount}
+            reviewCount={hotel.review_count}
             className="rating-lg"
           />
 
-          <div className="tags-row">
-            {hotel.tags.map((tag, index) => (
-              <Tag key={index} color="primary" fill="outline">
-                {tag}
-              </Tag>
-            ))}
-          </div>
+          {Array.isArray(hotel.facilities) && hotel.facilities.length > 0 && (
+            <div className="tags-row">
+              {hotel.facilities.slice(0, 5).map((tag, index) => (
+                <Tag key={index} color="primary" fill="outline">
+                  {tag}
+                </Tag>
+              ))}
+            </div>
+          )}
 
           {hotel.promotion && (
             <div className="promotion-banner">
@@ -249,7 +253,7 @@ function HotelDetail() {
             <EnvironmentOutline style={{ fontSize: '18px', color: '#1677ff' }} />
             <div className="location-text">
               <p className="location-address">{hotel.address}</p>
-              <p className="location-district">{hotel.location.district} · {hotel.location.subway}</p>
+              <p className="location-district">{hotel.city || ''} {hotel.province || ''}</p>
             </div>
           </div>
 
@@ -268,22 +272,6 @@ function HotelDetail() {
             </Button>
           </div>
         </div>
-
-        {hotel.location.nearbyAttractions.length > 0 && (
-          <>
-            <Divider style={{ margin: '12px 0' }} />
-            <div className="nearby-attractions">
-              <h4>周边景点</h4>
-              <div className="attraction-tags">
-                {hotel.location.nearbyAttractions.map((attraction, index) => (
-                  <Tag key={index} color="default" style={{ margin: '4px' }}>
-                    📍 {attraction}
-                  </Tag>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
       </Card>
 
       {/* 日期选择 */}
@@ -301,50 +289,36 @@ function HotelDetail() {
       {/* 房型列表 */}
       <Card className="rooms-section">
         <h3 className="section-title">选择房型</h3>
-        {hotel.rooms.map((room) => (
+        {(hotel.rooms || []).map((room) => (
           <div key={room.id} className="room-card">
             <div className="room-info">
-              <h4 className="room-type">{room.type}</h4>
+              <h4 className="room-type">{room.name}</h4>
               <div className="room-details">
-                <span>🛏️ {room.bedType}</span>
-                <span>📏 {room.size}</span>
-                <span>👥 最多{room.maxGuests}人</span>
+                <span>🛏️ {room.bed_type}</span>
+                {room.area_sqm && <span>📏 {room.area_sqm}㎡</span>}
+                <span>👥 最多{room.max_guests || 2}人</span>
               </div>
 
               <div className="room-features">
-                {room.breakfast && (
-                  <Tag color="success" fill="outline" style={{ fontSize: '12px' }}>
-                    <CheckCircleFill /> 含早餐
-                  </Tag>
-                )}
-                {room.wifi && (
-                  <Tag color="primary" fill="outline" style={{ fontSize: '12px' }}>
-                    <CheckCircleFill /> 免费WiFi
-                  </Tag>
-                )}
-                <Tag color="default" fill="outline" style={{ fontSize: '12px' }}>
-                  {room.cancelPolicy}
+                <Tag color="primary" fill="outline" style={{ fontSize: '12px' }}>
+                  <CheckCircleFill /> 免费WiFi
                 </Tag>
-              </div>
-
-              <div className="room-stock">
-                仅剩 <span className="stock-number">{room.stock}</span> 间
+                <Tag color="default" fill="outline" style={{ fontSize: '12px' }}>
+                  免费取消
+                </Tag>
               </div>
             </div>
 
             <div className="room-price-action">
               <div className="room-price">
-                {room.originalPrice > room.price && (
-                  <div className="original-price">¥{room.originalPrice}</div>
-                )}
                 <div className="current-price">
                   <span className="price-symbol">¥</span>
-                  <span className="price-value">{room.price}</span>
+                  <span className="price-value">{room.default_price}</span>
                   <span className="price-unit">/晚</span>
                 </div>
                 {dateRange.nights > 0 && (
                   <div className="total-price">
-                    共¥{room.price * dateRange.nights}
+                    共¥{room.default_price * dateRange.nights}
                   </div>
                 )}
               </div>
@@ -353,10 +327,9 @@ function HotelDetail() {
                 color="primary"
                 size="middle"
                 onClick={() => handleBookRoom(room)}
-                disabled={room.stock === 0}
                 style={{ marginTop: '8px', width: '100%' }}
               >
-                {room.stock === 0 ? '已售罄' : '预订'}
+                预订
               </Button>
             </div>
           </div>
@@ -367,7 +340,7 @@ function HotelDetail() {
       <Card className="facilities-section">
         <h3 className="section-title">酒店设施</h3>
         <div className="facilities-grid">
-          {hotel.facilities.map((facility, index) => (
+          {(hotel.facilities || []).map((facility, index) => (
             <div key={index} className="facility-item">
               <span className="facility-icon">✓</span>
               <span className="facility-name">{facility}</span>
@@ -380,8 +353,8 @@ function HotelDetail() {
       <Card className="details-section">
         <Collapse>
           <Collapse.Panel key="1" title="酒店介绍">
-            <p>开业时间：{hotel.openDate}</p>
-            <p>联系电话：{hotel.phone}</p>
+            {hotel.description && <p>{hotel.description}</p>}
+            <p>联系电话：{hotel.phone || '-'}</p>
             <p>酒店地址：{hotel.address}</p>
           </Collapse.Panel>
           <Collapse.Panel key="2" title="入住政策">

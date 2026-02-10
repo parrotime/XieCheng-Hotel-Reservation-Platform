@@ -8,9 +8,8 @@ import {
   NavBar
 } from 'antd-mobile'
 import { LeftOutline } from 'antd-mobile-icons'
-import { hotelsData } from '../../data/hotels'
+import { getHotels } from '../../api/hotels'
 import { starOptions, priceOptions, sortOptions } from '../../constants/filterOptions'
-import { getMinPrice } from '../../utils/hotelUtils'
 import HotelCard from '../../components/HotelCard'
 import './HotelList.css'
 
@@ -19,90 +18,92 @@ function HotelList() {
   const [searchParams] = useSearchParams()
 
   // 状态管理
+  const [allHotels, setAllHotels] = useState([])
   const [hotels, setHotels] = useState([])
   const [searchKey, setSearchKey] = useState('')
   const [selectedCity, setSelectedCity] = useState('')
   const [selectedStar, setSelectedStar] = useState([])
   const [priceRange, setPriceRange] = useState([])
   const [sortType, setSortType] = useState('default')
+  const [loading, setLoading] = useState(true)
 
-  // 从 URL 参数初始化筛选条件（只在首次加载时执行）
+  // 从 API 加载酒店数据
   useEffect(() => {
-    const city = searchParams.get('city') || '上海'
+    const fetchHotels = async () => {
+      try {
+        const data = await getHotels({ limit: 200 })
+        setAllHotels(data.hotels)
+      } catch (err) {
+        console.error('加载酒店失败:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchHotels()
+  }, [])
+
+  // 从 URL 参数初始化筛选条件
+  useEffect(() => {
+    const city = searchParams.get('city') || ''
     const keyword = searchParams.get('keyword') || ''
     const star = searchParams.get('star') || ''
     const price = searchParams.get('price') || ''
 
     setSelectedCity(city)
     setSearchKey(keyword)
-
-    if (star) {
-      setSelectedStar(star.split(',').map(Number))
-    }
-
-    if (price) {
-      setPriceRange(price.split(','))
-    }
+    if (star) setSelectedStar(star.split(',').map(Number))
+    if (price) setPriceRange(price.split(','))
   }, [searchParams])
 
   // 监听筛选条件变化，自动重新筛选
   useEffect(() => {
+    if (allHotels.length === 0 && loading) return
     filterData()
-  }, [selectedCity, searchKey, selectedStar, priceRange, sortType])
+  }, [allHotels, selectedCity, searchKey, selectedStar, priceRange, sortType])
 
-  // 筛选数据
+  // 筛选数据（基于 API 返回的数据做客户端筛选）
   const filterData = () => {
-    let result = [...hotelsData]
+    let result = [...allHotels]
 
-    // 按城市筛选
     if (selectedCity) {
-      result = result.filter(hotel => hotel.address.includes(selectedCity))
+      result = result.filter(h => h.city === selectedCity || h.address?.includes(selectedCity))
     }
-
-    // 按关键字筛选
     if (searchKey) {
-      result = result.filter(hotel =>
-        hotel.name.includes(searchKey) ||
-        hotel.nameEn.toLowerCase().includes(searchKey.toLowerCase()) ||
-        hotel.tags.some(tag => tag.includes(searchKey))
+      const key = searchKey.toLowerCase()
+      result = result.filter(h =>
+        h.name?.includes(searchKey) ||
+        h.name_en?.toLowerCase().includes(key)
       )
     }
-
-    // 按星级筛选
     if (selectedStar.length > 0) {
-      result = result.filter(hotel => selectedStar.includes(hotel.star))
+      result = result.filter(h => selectedStar.includes(h.star_rating))
     }
-
-    // 按价格筛选
     if (priceRange.length > 0) {
-      result = result.filter(hotel => {
-        const minRoomPrice = getMinPrice(hotel)
+      result = result.filter(h => {
+        const price = Number(h.min_price) || 0
         return priceRange.some(range => {
           const [min, max] = range.split('-').map(Number)
-          return minRoomPrice >= min && minRoomPrice <= max
+          return price >= min && price <= max
         })
       })
     }
 
-    // 排序
     result = sortHotels(result, sortType)
-
     setHotels(result)
   }
 
   // 排序函数
   const sortHotels = (data, type) => {
     const sorted = [...data]
-
     switch(type) {
       case 'price-asc':
-        return sorted.sort((a, b) => getMinPrice(a) - getMinPrice(b))
+        return sorted.sort((a, b) => Number(a.min_price || 0) - Number(b.min_price || 0))
       case 'price-desc':
-        return sorted.sort((a, b) => getMinPrice(b) - getMinPrice(a))
+        return sorted.sort((a, b) => Number(b.min_price || 0) - Number(a.min_price || 0))
       case 'rating':
-        return sorted.sort((a, b) => b.rating - a.rating)
+        return sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0))
       case 'star':
-        return sorted.sort((a, b) => b.star - a.star)
+        return sorted.sort((a, b) => (b.star_rating || 0) - (a.star_rating || 0))
       default:
         return sorted
     }

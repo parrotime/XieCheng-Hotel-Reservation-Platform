@@ -17,6 +17,7 @@ import {
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { useAuth } from '../../hooks/useAuth'
+import { getMyHotels, createHotel as createHotelApi, updateHotel as updateHotelApi, deleteHotel as deleteHotelApi } from '../../api/hotels'
 import StarRating from '../../components/StarRating'
 import StatusTag from '../../components/StatusTag'
 import PageHeader from '../../components/PageHeader'
@@ -25,7 +26,7 @@ import './HotelManage.css'
 const { Content } = Layout
 
 function HotelManage() {
-  const { userInfo, handleLogout } = useAuth('merchant', '请先登录商户账号')
+  const { userInfo, handleLogout } = useAuth('hotel_admin', '请先登录商户账号')
   const [form] = Form.useForm()
   const [roomForm] = Form.useForm()
 
@@ -37,9 +38,13 @@ function HotelManage() {
   const [currentRooms, setCurrentRooms] = useState([])
 
   // 加载酒店数据
-  const loadHotels = () => {
-    const merchantHotels = JSON.parse(localStorage.getItem('merchantHotels') || '[]')
-    setHotels(merchantHotels)
+  const loadHotels = async () => {
+    try {
+      const data = await getMyHotels()
+      setHotels(data)
+    } catch (err) {
+      message.error('加载酒店数据失败')
+    }
   }
 
   useEffect(() => {
@@ -60,18 +65,25 @@ function HotelManage() {
   const handleEdit = (hotel) => {
     setEditingHotel(hotel)
     setCurrentRooms(hotel.rooms || [])
-    
-    // 填充表单
+
+    // 填充表单（后端字段映射到表单字段）
     form.setFieldsValue({
-      ...hotel,
+      name: hotel.name,
+      nameEn: hotel.name_en,
+      star: hotel.star_rating,
+      address: hotel.address,
+      phone: hotel.phone,
+      district: hotel.location?.district || '',
+      subway: hotel.location?.subway || '',
       openDate: hotel.openDate ? dayjs(hotel.openDate) : null,
-      facilities: hotel.facilities?.join('、') || '',
-      tags: hotel.tags?.join('、') || ''
+      facilities: Array.isArray(hotel.facilities) ? hotel.facilities.join('、') : '',
+      tags: Array.isArray(hotel.tags) ? hotel.tags.join('、') : '',
+      nearbyAttractions: hotel.location?.nearbyAttractions?.join('、') || ''
     })
-    
+
     setModalVisible(true)
   }
-  
+
   // 删除酒店
   const handleDelete = (hotelId) => {
     Modal.confirm({
@@ -79,63 +91,54 @@ function HotelManage() {
       content: '确定要删除这家酒店吗？',
       okText: '确定',
       cancelText: '取消',
-      onOk: () => {
-        const newHotels = hotels.filter(h => h.id !== hotelId)
-        localStorage.setItem('merchantHotels', JSON.stringify(newHotels))
-        setHotels(newHotels)
-        message.success('删除成功')
+      onOk: async () => {
+        try {
+          await deleteHotelApi(hotelId)
+          message.success('删除成功')
+          loadHotels()
+        } catch (err) {
+          message.error(err.message || '删除失败')
+        }
       }
     })
   }
-  
+
   // 保存酒店信息
-  const handleSave = (values) => {
+  const handleSave = async (values) => {
     if (currentRooms.length === 0) {
       message.error('请至少添加一个房型')
       return
     }
-    
+
     const hotelData = {
-      ...values,
-      id: editingHotel?.id || Date.now(),
-      openDate: values.openDate ? values.openDate.format('YYYY-MM-DD') : '',
+      name: values.name,
+      name_en: values.nameEn,
+      star_rating: values.star,
+      address: values.address,
+      city: values.city || null,
+      province: values.province || null,
+      description: values.description || null,
       facilities: values.facilities ? values.facilities.split('、').filter(Boolean) : [],
-      tags: values.tags ? values.tags.split('、').filter(Boolean) : [],
-      rooms: currentRooms,
-      status: editingHotel?.status || 'pending', // pending/approved/rejected
       images: editingHotel?.images || [
-        'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800',
-        'https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=800'
+        { url: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=800', desc: '外观', is_main: true }
       ],
-      rating: editingHotel?.rating || 4.5,
-      reviewCount: editingHotel?.reviewCount || 0,
-      location: {
-        district: values.district || '',
-        subway: values.subway || '',
-        nearbyAttractions: values.nearbyAttractions 
-          ? values.nearbyAttractions.split('、').filter(Boolean) 
-          : []
-      },
-      createdBy: userInfo.username,
-      createdAt: editingHotel?.createdAt || new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      rooms: currentRooms,
     }
-    
-    let newHotels
-    if (editingHotel) {
-      // 编辑
-      newHotels = hotels.map(h => h.id === editingHotel.id ? hotelData : h)
-      message.success('保存成功')
-    } else {
-      // 新建
-      newHotels = [...hotels, hotelData]
-      message.success('创建成功，等待审核')
+
+    try {
+      if (editingHotel) {
+        await updateHotelApi(editingHotel.id, hotelData)
+        message.success('保存成功')
+      } else {
+        await createHotelApi(hotelData)
+        message.success('创建成功，等待审核')
+      }
+      setModalVisible(false)
+      form.resetFields()
+      loadHotels()
+    } catch (err) {
+      message.error(err.message || '操作失败')
     }
-    
-    localStorage.setItem('merchantHotels', JSON.stringify(newHotels))
-    setHotels(newHotels)
-    setModalVisible(false)
-    form.resetFields()
   }
   
   // 添加房型
@@ -171,14 +174,14 @@ function HotelManage() {
     },
     {
       title: '英文名称',
-      dataIndex: 'nameEn',
-      key: 'nameEn',
+      dataIndex: 'name_en',
+      key: 'name_en',
       width: 200,
     },
     {
       title: '星级',
-      dataIndex: 'star',
-      key: 'star',
+      dataIndex: 'star_rating',
+      key: 'star_rating',
       width: 100,
       render: (star) => <StarRating star={star} />
     },
