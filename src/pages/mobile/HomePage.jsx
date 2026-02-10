@@ -1,42 +1,36 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { 
-  SearchBar, 
-  Swiper, 
-  Button, 
-  DatePicker,
+import {
+  SearchBar,
+  Swiper,
+  Button,
   Selector,
   Tag,
   Toast,
   CascadePicker,
-  Slider  // 新增
+  Slider
 } from 'antd-mobile'
 import { EnvironmentOutline, CalendarOutline } from 'antd-mobile-icons'
 import { hotCities } from '../../data/cities'
-import { allCities } from '../../data/allCities'  // 新增
+import { allCities } from '../../data/allCities'
+import { starOptions, quickTags } from '../../constants/filterOptions'
+import { useDateRange } from '../../hooks/useDateRange'
+import DatePickerRow from '../../components/DatePickerRow'
 import './HomePage.css'
 
 function HomePage() {
   const navigate = useNavigate()
-  
+  const dateRange = useDateRange()
+
   // 状态管理
   const [searchKey, setSearchKey] = useState('')
   const [selectedCity, setSelectedCity] = useState('上海')
-  const [checkInDate, setCheckInDate] = useState(null)
-  const [checkOutDate, setCheckOutDate] = useState(null)
   const [selectedStar, setSelectedStar] = useState([])
   const [selectedTags, setSelectedTags] = useState([])
-  const [priceRange, setPriceRange] = useState([])
-  const [priceSlider, setPriceSlider] = useState([0, 5000])  // 新增：滑块价格
+  const [priceSlider, setPriceSlider] = useState([0, 5000])
   const [cityPickerVisible, setCityPickerVisible] = useState(false)
-  const [citySearchKey, setCitySearchKey] = useState('')
-  const [locating, setLocating] = useState(false)  // 新增：定位中状态
+  const [locating, setLocating] = useState(false)
 
-  // 日期选择器可见性控制
-  const [checkInVisible, setCheckInVisible] = useState(false)
-  const [checkOutVisible, setCheckOutVisible] = useState(false)
-  
-  // Banner 数据
   // Banner 数据
   const banners = [
     {
@@ -61,86 +55,7 @@ function HomePage() {
       hotelId: 3
     }
   ]
-  
-  // 快捷标签
-  const quickTags = [
-    { label: '如家', value: '如家' },
-    { label: '豪华', value: '豪华' },
-    { label: '免费早餐', value: '免费早餐' },
-    { label: '免费取消', value: '免费取消' },
-    { label: '游泳池', value: '游泳池' },
-    { label: '健身房', value: '健身房' }
-  ]
-  
-  // 星级选项
-  const starOptions = [
-    { label: '⭐⭐⭐⭐⭐ 五星', value: 5 },
-    { label: '⭐⭐⭐⭐ 四星', value: 4 },
-    { label: '⭐⭐⭐ 三星', value: 3 }
-  ]
-  
-  // 价格区间选项
-  const priceOptions = [
-    { label: '¥0-300', value: '0-300' },
-    { label: '¥300-600', value: '300-600' },
-    { label: '¥600-1000', value: '600-1000' },
-    { label: '¥1000-2000', value: '1000-2000' },
-    { label: '¥2000以上', value: '2000-99999' }
-  ]
-  
-  // 格式化日期显示
-  const formatDate = (date) => {
-    if (!date) return null
-    const d = new Date(date)
-    return `${d.getMonth() + 1}月${d.getDate()}日`
-  }
-  
-  // 入住日期确认
-  const handleCheckInConfirm = (value) => {
-    const selectedDate = new Date(value)
-    
-    // 如果已选退房日期，检查是否合法
-    if (checkOutDate) {
-      const checkOut = new Date(checkOutDate)
-      if (selectedDate >= checkOut) {
-        Toast.show({
-          icon: 'fail',
-          content: '入住日期必须早于退房日期',
-        })
-        return
-      }
-    }
-    
-    setCheckInDate(selectedDate)
-    Toast.show({
-      icon: 'success',
-      content: '入住日期已选择',
-    })
-  }
-  
-  // 退房日期确认
-  const handleCheckOutConfirm = (value) => {
-    const selectedDate = new Date(value)
-    
-    // 检查退房日期必须晚于入住日期
-    if (checkInDate) {
-      const checkIn = new Date(checkInDate)
-      if (selectedDate <= checkIn) {
-        Toast.show({
-          icon: 'fail',
-          content: '退房日期必须晚于入住日期',
-        })
-        return
-      }
-    }
-    
-    setCheckOutDate(selectedDate)
-    Toast.show({
-      icon: 'success',
-      content: '退房日期已选择',
-    })
-  }
-  
+
   // 快捷标签点击
   const handleTagClick = (tag) => {
     if (selectedTags.includes(tag.value)) {
@@ -149,27 +64,26 @@ function HomePage() {
       setSelectedTags([...selectedTags, tag.value])
     }
   }
-  
+
   // 搜索处理
   const handleSearch = () => {
     const cityToUse = selectedCity || '上海'
-    
+
     if (!selectedCity) {
       Toast.show({
         icon: 'info',
         content: '未选择城市，默认搜索上海地区',
       })
     }
-    
+
     const params = new URLSearchParams()
     params.append('city', cityToUse)
     if (searchKey) params.append('keyword', searchKey)
-    if (checkInDate) params.append('checkIn', checkInDate.toLocaleDateString('zh-CN'))
-    if (checkOutDate) params.append('checkOut', checkOutDate.toLocaleDateString('zh-CN'))
+    if (dateRange.checkInDate) params.append('checkIn', dateRange.checkInDate.toLocaleDateString('zh-CN'))
+    if (dateRange.checkOutDate) params.append('checkOut', dateRange.checkOutDate.toLocaleDateString('zh-CN'))
     if (selectedStar.length > 0) params.append('star', selectedStar.join(','))
     if (selectedTags.length > 0) params.append('tags', selectedTags.join(','))
-    if (priceRange.length > 0) params.append('price', priceRange.join(','))
-    
+
     // 保存搜索历史
     const searchHistory = JSON.parse(localStorage.getItem('searchHistory') || '[]')
     const newSearch = {
@@ -180,16 +94,16 @@ function HomePage() {
     }
     searchHistory.unshift(newSearch)
     localStorage.setItem('searchHistory', JSON.stringify(searchHistory.slice(0, 5)))
-    
+
     navigate(`/list?${params.toString()}`)
   }
-  
+
   // Banner 点击
   const handleBannerClick = (hotelId) => {
     navigate(`/detail/${hotelId}`)
   }
 
-  // 定位当前城市 - 新增
+  // 定位当前城市
   const handleLocationClick = () => {
     if (!navigator.geolocation) {
       Toast.show({
@@ -198,47 +112,33 @@ function HomePage() {
       })
       return
     }
-    
+
     setLocating(true)
-    
+
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const { latitude, longitude } = position.coords
-        
+
         try {
-          // 使用高德地图逆地理编码API（免费，无需key也能用，但有限制）
           const response = await fetch(
             `https://restapi.amap.com/v3/geocode/regeo?location=${longitude},${latitude}&key=&extensions=base&output=json`
           )
           const data = await response.json()
-          
+
           if (data.status === '1' && data.regeocode) {
-            const city = data.regeocode.addressComponent.city || 
+            const city = data.regeocode.addressComponent.city ||
                         data.regeocode.addressComponent.province
-            
-            // 去掉"市"字
             const cityName = city.replace(/市$/, '')
-            
             setSelectedCity(cityName)
-            Toast.show({
-              icon: 'success',
-              content: `定位成功：${cityName}`,
-            })
+            Toast.show({ icon: 'success', content: `定位成功：${cityName}` })
           } else {
-            // API失败时使用备用方案：根据经纬度粗略判断
             const cityName = getCityByCoordinates(latitude, longitude)
             setSelectedCity(cityName)
-            Toast.show({
-              icon: 'success',
-              content: `定位成功：${cityName}`,
-            })
+            Toast.show({ icon: 'success', content: `定位成功：${cityName}` })
           }
         } catch (error) {
           console.error('定位失败:', error)
-          Toast.show({
-            icon: 'fail',
-            content: '定位失败，请手动选择城市',
-          })
+          Toast.show({ icon: 'fail', content: '定位失败，请手动选择城市' })
         } finally {
           setLocating(false)
         }
@@ -246,31 +146,20 @@ function HomePage() {
       (error) => {
         console.error('定位错误:', error)
         setLocating(false)
-        
+
         let errorMsg = '定位失败'
-        if (error.code === 1) {
-          errorMsg = '您拒绝了定位权限'
-        } else if (error.code === 2) {
-          errorMsg = '无法获取位置信息'
-        } else if (error.code === 3) {
-          errorMsg = '定位超时'
-        }
-        
-        Toast.show({
-          icon: 'fail',
-          content: errorMsg,
-        })
+        if (error.code === 1) errorMsg = '您拒绝了定位权限'
+        else if (error.code === 2) errorMsg = '无法获取位置信息'
+        else if (error.code === 3) errorMsg = '定位超时'
+
+        Toast.show({ icon: 'fail', content: errorMsg })
       },
-      {
-        timeout: 10000,
-        enableHighAccuracy: true
-      }
+      { timeout: 10000, enableHighAccuracy: true }
     )
   }
 
   // 根据经纬度粗略判断城市（备用方案）
   const getCityByCoordinates = (lat, lng) => {
-    // 中国主要城市的大致经纬度范围
     const cityRanges = [
       { name: '北京', lat: [39.4, 41.1], lng: [115.7, 117.4] },
       { name: '上海', lat: [30.7, 31.5], lng: [121.0, 122.0] },
@@ -279,15 +168,15 @@ function HomePage() {
       { name: '杭州', lat: [29.9, 30.6], lng: [119.7, 120.9] },
       { name: '成都', lat: [30.1, 31.4], lng: [103.5, 104.9] },
     ]
-    
+
     for (const city of cityRanges) {
-      if (lat >= city.lat[0] && lat <= city.lat[1] && 
+      if (lat >= city.lat[0] && lat <= city.lat[1] &&
           lng >= city.lng[0] && lng <= city.lng[1]) {
         return city.name
       }
     }
-    
-    return '上海' // 默认返回上海
+
+    return '上海'
   }
 
   return (
@@ -295,13 +184,10 @@ function HomePage() {
       {/* 顶部 Banner */}
       <div className="banner-section">
         <Swiper
-          autoplay={{ delay: 3000 }}          // 自动播放，3秒间隔
-          loop                                // 循环播放
-          allowTouchMove={true}               // 允许手动滑动（手指左右滑）
-          style={{
-            '--border-radius': '8px',
-          }}
-          // 如果你本来就要加指示器，可以继续写在这里；如果暂时不要可以先删掉或注释
+          autoplay={{ delay: 3000 }}
+          loop
+          allowTouchMove={true}
+          style={{ '--border-radius': '8px' }}
           indicator={(total, current) => (
             <div className="custom-indicator">
               {current + 1} / {total}
@@ -310,7 +196,7 @@ function HomePage() {
         >
           {banners.map(banner => (
             <Swiper.Item key={banner.id}>
-              <div 
+              <div
                 className="banner-item"
                 onClick={() => handleBannerClick(banner.hotelId)}
               >
@@ -328,14 +214,13 @@ function HomePage() {
       {/* 核心查询区域 */}
       <div className="search-section">
         <h2>查找酒店</h2>
-        
+
         {/* 城市选择 */}
         <div className="search-item">
           <div className="search-label">
             <EnvironmentOutline /> 当前地点
           </div>
-          
-          {/* 热门城市快捷选择 */}
+
           <Selector
             options={hotCities.map(city => ({
               label: city.name,
@@ -345,10 +230,9 @@ function HomePage() {
             onChange={(arr) => setSelectedCity(arr[0])}
             style={{ '--border-radius': '8px' }}
           />
-          
-          {/* 更多城市按钮 */}
-          <Button 
-            block 
+
+          <Button
+            block
             fill="outline"
             style={{ marginTop: '12px' }}
             onClick={() => setCityPickerVisible(true)}
@@ -356,9 +240,8 @@ function HomePage() {
             选择其他城市
           </Button>
 
-          {/* 定位按钮 - 新增 */}
-          <Button 
-            block 
+          <Button
+            block
             color="primary"
             fill="outline"
             loading={locating}
@@ -367,7 +250,6 @@ function HomePage() {
           >
             {locating ? '定位中...' : '📍 定位当前城市'}
           </Button>
-
         </div>
 
         {/* 城市选择弹窗 */}
@@ -421,57 +303,21 @@ function HomePage() {
           <div className="search-label">
             <CalendarOutline /> 入住日期
           </div>
-          <div className="date-picker-row">
-            <Button
-              size="large"
-              fill="outline"
-              onClick={() => setCheckInVisible(true)}
-            >
-              {checkInDate ? formatDate(checkInDate) : '入住日期'}
-            </Button>
-            <span style={{ margin: '0 10px' }}>-</span>
-            <Button
-              size="large"
-              fill="outline"
-              onClick={() => setCheckOutVisible(true)}
-            >
-              {checkOutDate ? formatDate(checkOutDate) : '退房日期'}
-            </Button>
-          </div>
+          <DatePickerRow dateRange={dateRange} />
         </div>
-        
-        {/* 入住日期选择器 */}
-        <DatePicker
-          visible={checkInVisible}
-          onClose={() => setCheckInVisible(false)}
-          onConfirm={handleCheckInConfirm}
-          min={new Date()}
-          precision='day'
-          title="选择入住日期"
-        />
-        
-        {/* 退房日期选择器 */}
-        <DatePicker
-          visible={checkOutVisible}
-          onClose={() => setCheckOutVisible(false)}
-          onConfirm={handleCheckOutConfirm}
-          min={checkInDate ? new Date(checkInDate.getTime() + 24 * 60 * 60 * 1000) : new Date(new Date().getTime() + 24 * 60 * 60 * 1000)}
-          precision='day'
-          title="选择退房日期"
-        />
 
         {/* 显示入住天数 */}
-        {checkInDate && checkOutDate && (
-          <div style={{ 
-            marginTop: '12px', 
-            padding: '8px 12px', 
-            background: '#e6f4ff', 
+        {dateRange.nights > 0 && (
+          <div style={{
+            marginTop: '12px',
+            padding: '8px 12px',
+            background: '#e6f4ff',
             borderRadius: '8px',
             textAlign: 'center',
             fontSize: '14px',
             color: '#1677ff'
           }}>
-            📅 共入住 {Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24))} 晚
+            📅 共入住 {dateRange.nights} 晚
           </div>
         )}
 
@@ -488,22 +334,19 @@ function HomePage() {
         </div>
 
         {/* 价格区间 */}
-        {/* 价格区间 */}
         <div className="search-item">
           <div className="search-label">价格区间</div>
-          
-          {/* 显示当前价格 */}
-          <div style={{ 
-            marginBottom: '12px', 
-            fontSize: '16px', 
+
+          <div style={{
+            marginBottom: '12px',
+            fontSize: '16px',
             fontWeight: 'bold',
             color: '#1677ff',
             textAlign: 'center'
           }}>
             ¥{priceSlider[0]} - ¥{priceSlider[1]}
           </div>
-          
-          {/* 价格滑块 */}
+
           <Slider
             range
             min={0}
@@ -524,8 +367,8 @@ function HomePage() {
                 key={tag.value}
                 color={selectedTags.includes(tag.value) ? 'primary' : 'default'}
                 fill={selectedTags.includes(tag.value) ? 'solid' : 'outline'}
-                style={{ 
-                  marginRight: '8px', 
+                style={{
+                  marginRight: '8px',
                   marginBottom: '8px',
                   fontSize: '14px',
                   padding: '6px 12px',

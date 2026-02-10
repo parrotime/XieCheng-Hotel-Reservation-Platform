@@ -1,0 +1,38 @@
+.price-display {
+  text-align: right;
+}
+
+.price-display .original-price {
+  font-size: 12px;
+  color: #999;
+  text-decoration: line-through;
+  margin-bottom: 2px;
+  display: block;
+}
+
+.price-display .current-price {
+  display: flex;
+  align-items: baseline;
+  color: #ff6b6b;
+}
+
+.price-display .price-label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.price-display .price-value {
+  font-size: 24px;
+  font-weight: bold;
+  margin: 0 2px;
+}
+
+.price-display .price-unit {
+  font-size: 12px;
+}
+
+@media (max-width: 375px) {
+  .price-display .price-value {
+    font-size: 20px;
+  }
+}

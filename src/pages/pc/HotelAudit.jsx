@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { 
-  Layout, 
-  Card, 
+import {
+  Layout,
+  Card,
   Table,
   Space,
   Button,
-  Tag,
   Modal,
   Form,
   Input,
@@ -14,54 +12,43 @@ import {
   Descriptions,
   Image
 } from 'antd'
-import { 
-  LogoutOutlined, 
-  CheckCircleOutlined, 
+import {
+  CheckCircleOutlined,
   CloseCircleOutlined,
   EyeOutlined,
   StopOutlined
 } from '@ant-design/icons'
+import { useAuth } from '../../hooks/useAuth'
+import StarRating from '../../components/StarRating'
+import StatusTag from '../../components/StatusTag'
+import PageHeader from '../../components/PageHeader'
 import './HotelAudit.css'
 
-const { Header, Content } = Layout
+const { Content } = Layout
 const { TextArea } = Input
 
 function HotelAudit() {
-  const navigate = useNavigate()
+  const { userInfo, handleLogout } = useAuth('admin', '请先登录管理员账号')
   const [form] = Form.useForm()
-  
+
   // 状态管理
-  const [userInfo, setUserInfo] = useState(null)
   const [hotels, setHotels] = useState([])
   const [detailVisible, setDetailVisible] = useState(false)
   const [rejectVisible, setRejectVisible] = useState(false)
   const [currentHotel, setCurrentHotel] = useState(null)
   const [filterStatus, setFilterStatus] = useState('all')
-  
-  // 加载用户信息和酒店数据
-  useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('userInfo') || 'null')
-    if (!user || user.role !== 'admin') {
-      message.error('请先登录管理员账号')
-      navigate('/login')
-      return
-    }
-    setUserInfo(user)
-    loadHotels()
-  }, [navigate])
-  
+
   // 加载酒店数据
   const loadHotels = () => {
     const merchantHotels = JSON.parse(localStorage.getItem('merchantHotels') || '[]')
     setHotels(merchantHotels)
   }
-  
-  // 退出登录
-  const handleLogout = () => {
-    localStorage.removeItem('userInfo')
-    message.success('已退出登录')
-    navigate('/login')
-  }
+
+  useEffect(() => {
+    if (userInfo) {
+      loadHotels()
+    }
+  }, [userInfo])
   
   // 查看详情
   const handleViewDetail = (hotel) => {
@@ -198,7 +185,7 @@ function HotelAudit() {
       dataIndex: 'star',
       key: 'star',
       width: 100,
-      render: (star) => '⭐'.repeat(star)
+      render: (star) => <StarRating star={star} />
     },
     {
       title: '地址',
@@ -224,25 +211,16 @@ function HotelAudit() {
       dataIndex: 'status',
       key: 'status',
       width: 120,
-      render: (status, record) => {
-        const statusMap = {
-          pending: { text: '待审核', color: 'orange' },
-          approved: { text: '已上线', color: 'green' },
-          rejected: { text: '已拒绝', color: 'red' },
-          offline: { text: '已下线', color: 'default' }
-        }
-        const s = statusMap[status] || statusMap.pending
-        return (
-          <div>
-            <Tag color={s.color}>{s.text}</Tag>
-            {status === 'rejected' && record.rejectReason && (
-              <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
-                原因：{record.rejectReason}
-              </div>
-            )}
-          </div>
-        )
-      }
+      render: (status, record) => (
+        <div>
+          <StatusTag status={status} />
+          {status === 'rejected' && record.rejectReason && (
+            <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
+              原因：{record.rejectReason}
+            </div>
+          )}
+        </div>
+      )
     },
     {
       title: '操作',
@@ -319,17 +297,13 @@ function HotelAudit() {
 
   return (
     <Layout className="hotel-audit-page">
-      <Header className="audit-header">
-        <div className="header-content">
-          <h2>✅ 酒店信息审核</h2>
-          <div className="header-actions">
-            <span className="user-info">管理员：{userInfo?.username}</span>
-            <Button icon={<LogoutOutlined />} onClick={handleLogout}>
-              退出登录
-            </Button>
-          </div>
-        </div>
-      </Header>
+      <PageHeader
+        title="✅ 酒店信息审核"
+        roleLabel="管理员"
+        username={userInfo?.username}
+        onLogout={handleLogout}
+        className="audit-header"
+      />
       
       <Content className="audit-content">
         {/* 统计卡片 */}
@@ -396,7 +370,7 @@ function HotelAudit() {
             <Descriptions bordered column={2}>
               <Descriptions.Item label="酒店中文名">{currentHotel.name}</Descriptions.Item>
               <Descriptions.Item label="酒店英文名">{currentHotel.nameEn}</Descriptions.Item>
-              <Descriptions.Item label="星级">{'⭐'.repeat(currentHotel.star)}</Descriptions.Item>
+              <Descriptions.Item label="星级"><StarRating star={currentHotel.star} /></Descriptions.Item>
               <Descriptions.Item label="联系电话">{currentHotel.phone || '-'}</Descriptions.Item>
               <Descriptions.Item label="详细地址" span={2}>{currentHotel.address}</Descriptions.Item>
               <Descriptions.Item label="所在区域">{currentHotel.location?.district || '-'}</Descriptions.Item>

@@ -16,10 +16,6 @@ function App() {
   return (
     <BrowserRouter>
       <div className="App">
-        <h1>易宿酒店预订平台 🏨</h1>
-        
-        {/* 移除测试导航，让每个页面独立管理自己的导航 */}
-
         {/* 路由配置 */}
         <Routes>
             {/* 移动端路由 - 默认首页 */}

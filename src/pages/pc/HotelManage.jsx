@@ -1,65 +1,52 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { 
-  Layout, 
-  Card, 
-  Form, 
-  Input, 
-  Select, 
-  DatePicker, 
-  Button, 
+import {
+  Layout,
+  Card,
+  Form,
+  Input,
+  Select,
+  DatePicker,
+  Button,
   Table,
   Space,
   message,
   Modal,
   InputNumber,
-  Switch,
-  Tag
+  Switch
 } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined, LogoutOutlined } from '@ant-design/icons'
+import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
+import { useAuth } from '../../hooks/useAuth'
+import StarRating from '../../components/StarRating'
+import StatusTag from '../../components/StatusTag'
+import PageHeader from '../../components/PageHeader'
 import './HotelManage.css'
 
-const { Header, Content } = Layout
-const { TextArea } = Input
+const { Content } = Layout
 
 function HotelManage() {
-  const navigate = useNavigate()
+  const { userInfo, handleLogout } = useAuth('merchant', '请先登录商户账号')
   const [form] = Form.useForm()
   const [roomForm] = Form.useForm()
-  
+
   // 状态管理
-  const [userInfo, setUserInfo] = useState(null)
   const [hotels, setHotels] = useState([])
   const [editingHotel, setEditingHotel] = useState(null)
   const [modalVisible, setModalVisible] = useState(false)
   const [roomModalVisible, setRoomModalVisible] = useState(false)
   const [currentRooms, setCurrentRooms] = useState([])
-  
-  // 加载用户信息和酒店数据
-  useEffect(() => {
-    const user = JSON.parse(localStorage.getItem('userInfo') || 'null')
-    if (!user || user.role !== 'merchant') {
-      message.error('请先登录商户账号')
-      navigate('/login')
-      return
-    }
-    setUserInfo(user)
-    loadHotels()
-  }, [navigate])
-  
+
   // 加载酒店数据
   const loadHotels = () => {
     const merchantHotels = JSON.parse(localStorage.getItem('merchantHotels') || '[]')
     setHotels(merchantHotels)
   }
-  
-  // 退出登录
-  const handleLogout = () => {
-    localStorage.removeItem('userInfo')
-    message.success('已退出登录')
-    navigate('/login')
-  }
+
+  useEffect(() => {
+    if (userInfo) {
+      loadHotels()
+    }
+  }, [userInfo])
   
   // 新建酒店
   const handleCreate = () => {
@@ -193,7 +180,7 @@ function HotelManage() {
       dataIndex: 'star',
       key: 'star',
       width: 100,
-      render: (star) => '⭐'.repeat(star)
+      render: (star) => <StarRating star={star} />
     },
     {
       title: '地址',
@@ -212,16 +199,7 @@ function HotelManage() {
       dataIndex: 'status',
       key: 'status',
       width: 100,
-      render: (status) => {
-        const statusMap = {
-          pending: { text: '待审核', color: 'orange' },
-          approved: { text: '已上线', color: 'green' },
-          rejected: { text: '已拒绝', color: 'red' },
-          offline: { text: '已下线', color: 'default' }
-        }
-        const s = statusMap[status] || statusMap.pending
-        return <Tag color={s.color}>{s.text}</Tag>
-      }
+      render: (status) => <StatusTag status={status} />
     },
     {
       title: '操作',
@@ -281,17 +259,13 @@ function HotelManage() {
 
   return (
     <Layout className="hotel-manage-page">
-      <Header className="manage-header">
-        <div className="header-content">
-          <h2>🏨 酒店信息管理</h2>
-          <div className="header-actions">
-            <span className="user-info">商户：{userInfo?.username}</span>
-            <Button icon={<LogoutOutlined />} onClick={handleLogout}>
-              退出登录
-            </Button>
-          </div>
-        </div>
-      </Header>
+      <PageHeader
+        title="🏨 酒店信息管理"
+        roleLabel="商户"
+        username={userInfo?.username}
+        onLogout={handleLogout}
+        className="manage-header"
+      />
       
       <Content className="manage-content">
         <Card>

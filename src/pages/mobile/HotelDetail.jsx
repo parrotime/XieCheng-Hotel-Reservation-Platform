@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { 
+import {
   NavBar,
   Swiper,
   Tag,
@@ -8,141 +8,65 @@ import {
   Button,
   Toast,
   Divider,
-  Collapse,
-  DatePicker
+  Collapse
 } from 'antd-mobile'
-import { 
-  LeftOutline, 
+import {
+  LeftOutline,
   EnvironmentOutline,
   PhoneFill,
   CheckCircleFill
 } from 'antd-mobile-icons'
 import { getHotelById } from '../../data/hotels'
+import { useDateRange } from '../../hooks/useDateRange'
+import { formatDate } from '../../utils/dateUtils'
+import StarRating from '../../components/StarRating'
+import RatingDisplay from '../../components/RatingDisplay'
+import DatePickerRow from '../../components/DatePickerRow'
 import './HotelDetail.css'
 
 function HotelDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  
+  const dateRange = useDateRange()
+
   // 状态管理
   const [hotel, setHotel] = useState(null)
-  const [checkInDate, setCheckInDate] = useState(null)
-  const [checkOutDate, setCheckOutDate] = useState(null)
-  const [nights, setNights] = useState(0)
-  
-  // 日期选择器可见性
-  const [checkInVisible, setCheckInVisible] = useState(false)
-  const [checkOutVisible, setCheckOutVisible] = useState(false)
-  
+
   // 自定义对话框状态
   const [confirmVisible, setConfirmVisible] = useState(false)
   const [confirmData, setConfirmData] = useState(null)
-  
+
   // 加载酒店数据
   useEffect(() => {
     const hotelData = getHotelById(id)
     if (hotelData) {
       setHotel(hotelData)
     } else {
-      Toast.show({
-        icon: 'fail',
-        content: '酒店不存在',
-      })
+      Toast.show({ icon: 'fail', content: '酒店不存在' })
       setTimeout(() => navigate('/list'), 1500)
     }
   }, [id, navigate])
-  
-  // 计算入住天数
-  useEffect(() => {
-    if (checkInDate && checkOutDate) {
-      const date1 = new Date(checkInDate)
-      const date2 = new Date(checkOutDate)
-      const diffTime = date2.getTime() - date1.getTime()
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-      setNights(diffDays > 0 ? diffDays : 0)
-    } else {
-      setNights(0)
-    }
-  }, [checkInDate, checkOutDate])
-  
-  // 格式化日期显示
-  const formatDate = (date) => {
-    if (!date) return null
-    const d = new Date(date)
-    return `${d.getMonth() + 1}月${d.getDate()}日`
-  }
-  
-  // 入住日期确认
-  const handleCheckInConfirm = (value) => {
-    const selectedDate = new Date(value)
-    
-    // 如果已选退房日期，检查是否合法
-    if (checkOutDate) {
-      const checkOut = new Date(checkOutDate)
-      if (selectedDate >= checkOut) {
-        Toast.show({
-          icon: 'fail',
-          content: '入住日期必须早于退房日期',
-        })
-        return
-      }
-    }
-    
-    setCheckInDate(selectedDate)
-    Toast.show({
-      icon: 'success',
-      content: '入住日期已选择',
-    })
-  }
-  
-  // 退房日期确认
-  const handleCheckOutConfirm = (value) => {
-    const selectedDate = new Date(value)
-    
-    // 检查退房日期必须晚于入住日期
-    if (checkInDate) {
-      const checkIn = new Date(checkInDate)
-      if (selectedDate <= checkIn) {
-        Toast.show({
-          icon: 'fail',
-          content: '退房日期必须晚于入住日期',
-        })
-        return
-      }
-    }
-    
-    setCheckOutDate(selectedDate)
-    Toast.show({
-      icon: 'success',
-      content: '退房日期已选择',
-    })
-  }
-  
+
   // 返回列表
   const handleBack = () => {
     navigate(-1)
   }
-  
+
   // 打电话
   const handleCall = () => {
     if (hotel) {
       window.location.href = `tel:${hotel.phone}`
     }
   }
-  
+
   // 地图导航
   const handleMap = () => {
-    Toast.show({
-      content: '打开地图功能（实际项目中调用地图API）',
-    })
+    Toast.show({ content: '打开地图功能（实际项目中调用地图API）' })
   }
-  
-  // 预订房间 - 使用自定义对话框
-  // 预订房间 - 使用自定义对话框
-  // 预订房间 - 使用自定义对话框
+
+  // 预订房间
   const handleBookRoom = (room) => {
-    if (!checkInDate || !checkOutDate) {
-      // 使用自定义对话框代替 Toast
+    if (!dateRange.checkInDate || !dateRange.checkOutDate) {
       setConfirmData({
         hotelName: '提示',
         roomType: '',
@@ -150,50 +74,42 @@ function HotelDetail() {
         checkOut: '',
         nights: 0,
         totalPrice: 0,
-        isWarning: true  // 添加标记表示这是警告提示
+        isWarning: true
       })
       setConfirmVisible(true)
       return
     }
-    
-    if (nights <= 0) {
-      Toast.show({
-        icon: 'fail',
-        content: '请选择有效的日期',
-      })
+
+    if (dateRange.nights <= 0) {
+      Toast.show({ icon: 'fail', content: '请选择有效的日期' })
       return
     }
-    
-    const totalPrice = room.price * nights
-    
-    // 设置对话框数据并显示
+
+    const totalPrice = room.price * dateRange.nights
+
     setConfirmData({
       hotelName: hotel.name,
       roomType: room.type,
-      checkIn: formatDate(checkInDate),
-      checkOut: formatDate(checkOutDate),
-      nights: nights,
+      checkIn: formatDate(dateRange.checkInDate),
+      checkOut: formatDate(dateRange.checkOutDate),
+      nights: dateRange.nights,
       totalPrice: totalPrice,
-      isWarning: false  // 正常预订
+      isWarning: false
     })
     setConfirmVisible(true)
   }
-  
+
   // 确认预订
   const handleConfirmBook = () => {
     setConfirmVisible(false)
-    Toast.show({
-      icon: 'success',
-      content: '预订成功！（演示功能）',
-      duration: 2000
-    })
+    Toast.show({ icon: 'success', content: '预订成功！（演示功能）', duration: 2000 })
   }
-  
+
   // 取消预订
   const handleCancelBook = () => {
     setConfirmVisible(false)
   }
-  
+
   // 如果数据还没加载
   if (!hotel) {
     return (
@@ -205,10 +121,9 @@ function HotelDetail() {
       </div>
     )
   }
-  
+
   return (
     <div className="hotel-detail-page">
-      {/* 自定义确认对话框 */}
       {/* 自定义确认对话框 */}
       {confirmVisible && confirmData && (
         <div className="custom-modal-overlay" onClick={handleCancelBook}>
@@ -218,14 +133,10 @@ function HotelDetail() {
             </div>
             <div className="modal-content">
               {confirmData.isWarning ? (
-                // 警告提示内容
-                <>
-                  <p style={{ textAlign: 'center', fontSize: '16px', color: '#ff6b6b' }}>
-                    请先选择入住和退房日期
-                  </p>
-                </>
+                <p style={{ textAlign: 'center', fontSize: '16px', color: '#ff6b6b' }}>
+                  请先选择入住和退房日期
+                </p>
               ) : (
-                // 正常预订内容
                 <>
                   <p><strong>{confirmData.hotelName}</strong></p>
                   <p>房型：{confirmData.roomType}</p>
@@ -241,12 +152,10 @@ function HotelDetail() {
             </div>
             <div className="modal-footer">
               {confirmData.isWarning ? (
-                // 警告提示只有一个按钮
                 <button className="modal-btn modal-btn-confirm" onClick={handleCancelBook} style={{ width: '100%' }}>
                   知道了
                 </button>
               ) : (
-                // 正常预订有两个按钮
                 <>
                   <button className="modal-btn modal-btn-cancel" onClick={handleCancelBook}>
                     再看看
@@ -260,12 +169,12 @@ function HotelDetail() {
           </div>
         </div>
       )}
-      
+
       {/* 顶部导航 */}
-      <NavBar 
+      <NavBar
         onBack={handleBack}
         backArrow={<LeftOutline />}
-        style={{ 
+        style={{
           '--height': '45px',
           background: 'white',
           position: 'sticky',
@@ -276,7 +185,7 @@ function HotelDetail() {
       >
         酒店详情
       </NavBar>
-      
+
       {/* 图片轮播 */}
       <div className="image-section">
         <Swiper
@@ -297,25 +206,25 @@ function HotelDetail() {
           ))}
         </Swiper>
       </div>
-      
+
       {/* 酒店基本信息 */}
       <Card className="info-card">
         <div className="hotel-header-info">
           <div className="title-row">
             <h1 className="hotel-title">{hotel.name}</h1>
             <div className="hotel-star-badge">
-              {'⭐'.repeat(hotel.star)}
+              <StarRating star={hotel.star} />
             </div>
           </div>
-          
+
           <p className="hotel-subtitle">{hotel.nameEn}</p>
-          
-          <div className="rating-row">
-            <span className="rating-score">{hotel.rating}</span>
-            <span className="rating-text">很棒</span>
-            <span className="review-count">({hotel.reviewCount}条评论)</span>
-          </div>
-          
+
+          <RatingDisplay
+            rating={hotel.rating}
+            reviewCount={hotel.reviewCount}
+            className="rating-lg"
+          />
+
           <div className="tags-row">
             {hotel.tags.map((tag, index) => (
               <Tag key={index} color="primary" fill="outline">
@@ -323,7 +232,7 @@ function HotelDetail() {
               </Tag>
             ))}
           </div>
-          
+
           {hotel.promotion && (
             <div className="promotion-banner">
               <span className="promotion-icon">🎁</span>
@@ -332,7 +241,7 @@ function HotelDetail() {
           )}
         </div>
       </Card>
-      
+
       {/* 位置信息 */}
       <Card className="location-card">
         <div className="location-info">
@@ -343,15 +252,15 @@ function HotelDetail() {
               <p className="location-district">{hotel.location.district} · {hotel.location.subway}</p>
             </div>
           </div>
-          
+
           <div className="location-actions">
             <Button size="small" color="primary" fill="outline" onClick={handleMap}>
               查看地图
             </Button>
-            <Button 
-              size="small" 
-              color="primary" 
-              fill="outline" 
+            <Button
+              size="small"
+              color="primary"
+              fill="outline"
               onClick={handleCall}
               style={{ marginLeft: '8px' }}
             >
@@ -359,7 +268,7 @@ function HotelDetail() {
             </Button>
           </div>
         </div>
-        
+
         {hotel.location.nearbyAttractions.length > 0 && (
           <>
             <Divider style={{ margin: '12px 0' }} />
@@ -376,57 +285,19 @@ function HotelDetail() {
           </>
         )}
       </Card>
-      
+
       {/* 日期选择 */}
       <Card className="date-section">
         <h3 className="section-title">选择入住日期</h3>
-        <div className="date-picker-row">
-          <Button
-            size="large"
-            fill="outline"
-            onClick={() => setCheckInVisible(true)}
-            style={{ flex: 1 }}
-          >
-            {checkInDate ? formatDate(checkInDate) : '入住日期'}
-          </Button>
-          <span style={{ margin: '0 10px', fontSize: '18px', color: '#999' }}>→</span>
-          <Button
-            size="large"
-            fill="outline"
-            onClick={() => setCheckOutVisible(true)}
-            style={{ flex: 1 }}
-          >
-            {checkOutDate ? formatDate(checkOutDate) : '退房日期'}
-          </Button>
-        </div>
-        
-        {/* 入住日期选择器 */}
-        <DatePicker
-          visible={checkInVisible}
-          onClose={() => setCheckInVisible(false)}
-          onConfirm={handleCheckInConfirm}
-          min={new Date()}
-          precision='day'
-          title="选择入住日期"
-        />
-        
-        {/* 退房日期选择器 */}
-        <DatePicker
-          visible={checkOutVisible}
-          onClose={() => setCheckOutVisible(false)}
-          onConfirm={handleCheckOutConfirm}
-          min={checkInDate ? new Date(checkInDate.getTime() + 24 * 60 * 60 * 1000) : new Date(new Date().getTime() + 24 * 60 * 60 * 1000)}
-          precision='day'
-          title="选择退房日期"
-        />
-        
-        {nights > 0 && (
+        <DatePickerRow dateRange={dateRange} separator="→" />
+
+        {dateRange.nights > 0 && (
           <div className="nights-info">
-            共 <span className="nights-number">{nights}</span> 晚
+            共 <span className="nights-number">{dateRange.nights}</span> 晚
           </div>
         )}
       </Card>
-      
+
       {/* 房型列表 */}
       <Card className="rooms-section">
         <h3 className="section-title">选择房型</h3>
@@ -439,7 +310,7 @@ function HotelDetail() {
                 <span>📏 {room.size}</span>
                 <span>👥 最多{room.maxGuests}人</span>
               </div>
-              
+
               <div className="room-features">
                 {room.breakfast && (
                   <Tag color="success" fill="outline" style={{ fontSize: '12px' }}>
@@ -455,12 +326,12 @@ function HotelDetail() {
                   {room.cancelPolicy}
                 </Tag>
               </div>
-              
+
               <div className="room-stock">
                 仅剩 <span className="stock-number">{room.stock}</span> 间
               </div>
             </div>
-            
+
             <div className="room-price-action">
               <div className="room-price">
                 {room.originalPrice > room.price && (
@@ -471,15 +342,15 @@ function HotelDetail() {
                   <span className="price-value">{room.price}</span>
                   <span className="price-unit">/晚</span>
                 </div>
-                {nights > 0 && (
+                {dateRange.nights > 0 && (
                   <div className="total-price">
-                    共¥{room.price * nights}
+                    共¥{room.price * dateRange.nights}
                   </div>
                 )}
               </div>
-              
-              <Button 
-                color="primary" 
+
+              <Button
+                color="primary"
                 size="middle"
                 onClick={() => handleBookRoom(room)}
                 disabled={room.stock === 0}
@@ -491,7 +362,7 @@ function HotelDetail() {
           </div>
         ))}
       </Card>
-      
+
       {/* 酒店设施 */}
       <Card className="facilities-section">
         <h3 className="section-title">酒店设施</h3>
@@ -504,7 +375,7 @@ function HotelDetail() {
           ))}
         </div>
       </Card>
-      
+
       {/* 酒店详情 */}
       <Card className="details-section">
         <Collapse>
