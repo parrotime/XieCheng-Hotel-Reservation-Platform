@@ -17,7 +17,7 @@ export function useAuth(requiredRole, errorMessage) {
     const token = localStorage.getItem('token')
     const user = JSON.parse(localStorage.getItem('userInfo') || 'null')
 
-    if (!token || !user || user.role !== requiredRole) {
+    if (!token || !user || (user.role !== requiredRole && user.role !== 'developer')) {
       message.error(errorMessage)
       navigate('/login')
       return

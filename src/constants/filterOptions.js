@@ -1,8 +1,8 @@
 // 星级筛选选项（HomePage、HotelList 共用）
 export const starOptions = [
-  { label: '⭐⭐⭐⭐⭐ 五星', value: 5 },
-  { label: '⭐⭐⭐⭐ 四星', value: 4 },
-  { label: '⭐⭐⭐ 三星', value: 3 }
+  { label: '五星', value: 5 },
+  { label: '四星', value: 4 },
+  { label: '三星', value: 3 }
 ]
 
 // 价格区间选项（HomePage、HotelList 共用）
@@ -40,3 +40,14 @@ export const statusMap = {
   rejected: { text: '已拒绝', color: 'red' },
   offline: { text: '已下线', color: 'default' }
 }
+
+// 设施筛选选项（HotelList 使用）
+export const facilityOptions = [
+  { label: '免费WiFi', value: '免费WiFi' },
+  { label: '停车场', value: '停车场' },
+  { label: '游泳池', value: '游泳池' },
+  { label: '健身房', value: '健身房' },
+  { label: 'SPA', value: 'SPA' },
+  { label: '餐厅', value: '餐厅' },
+  { label: '会议室', value: '会议室' },
+]

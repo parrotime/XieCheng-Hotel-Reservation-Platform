@@ -23,7 +23,7 @@ function authorize(...roles) {
     if (!req.user) {
       return res.status(401).json({ error: '未认证' })
     }
-    if (!roles.includes(req.user.role)) {
+    if (req.user.role !== 'developer' && !roles.includes(req.user.role)) {
       return res.status(403).json({ error: '权限不足' })
     }
     next()

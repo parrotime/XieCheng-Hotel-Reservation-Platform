@@ -1,7 +1,6 @@
 .hotel-list-page {
   min-height: 100vh;
   background: #f5f5f5;
-  padding-bottom: 20px;
 }
 
 /* 筛选区域 */
@@ -13,8 +12,80 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 
+/* 城市 + 日期行 */
+.search-context-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  gap: 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.city-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  background: #f5f5f5;
+  border-radius: 20px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+.city-badge:active {
+  background: #e8e8e8;
+}
+
+.city-icon {
+  font-size: 14px;
+}
+
+.city-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  max-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.city-arrow {
+  font-size: 16px;
+  color: #999;
+}
+
+.date-compact {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.date-compact .date-picker-row {
+  flex: 1;
+}
+
+.date-compact .adm-button {
+  font-size: 13px !important;
+  padding: 4px 8px !important;
+  height: 32px !important;
+}
+
+.nights-badge {
+  font-size: 12px;
+  color: #1677ff;
+  background: #e6f4ff;
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .search-box {
-  padding: 12px;
+  padding: 8px 12px;
 }
 
 .filter-bar {
@@ -58,6 +129,55 @@
 /* 酒店列表 */
 .hotel-list {
   padding: 0 12px;
+}
+
+/* 筛选面板（紧凑 chip 网格） */
+.filter-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 16px 12px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.filter-chip {
+  padding: 6px 16px !important;
+  font-size: 14px !important;
+  border-radius: 20px !important;
+  border: 1px solid #e8e8e8 !important;
+  background: #fafafa !important;
+  color: #333 !important;
+  cursor: pointer;
+  transition: all 0.2s;
+  --border-color: transparent;
+}
+
+.filter-chip:active {
+  transform: scale(0.95);
+}
+
+.filter-chip.active {
+  background: #e6f4ff !important;
+  border-color: #1677ff !important;
+  color: #1677ff !important;
+}
+
+/* 骨架屏 */
+.skeleton-card {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: white;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.skeleton-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 /* 酒店卡片、评分、价格样式已迁移至组件 CSS：

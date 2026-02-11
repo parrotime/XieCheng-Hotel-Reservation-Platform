@@ -1,0 +1,110 @@
+.dev-page {
+  min-height: 100vh;
+  background: #f0f2f5;
+}
+
+.dev-header {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  padding: 0 24px;
+  line-height: 64px;
+  height: 64px;
+}
+
+.dev-content {
+  max-width: 1200px;
+  margin: 24px auto;
+  padding: 0 24px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 统计卡片 */
+.dev-stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.dev-stat-card {
+  text-align: center;
+}
+
+.dev-stat-value {
+  font-size: 32px;
+  font-weight: bold;
+  color: #1890ff;
+  margin-bottom: 4px;
+}
+
+.dev-stat-label {
+  font-size: 14px;
+  color: #666;
+}
+
+/* 角色切换 */
+.role-switch-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* 路由链接 */
+.route-group {
+  margin-bottom: 16px;
+}
+
+.route-group h4 {
+  margin-bottom: 8px;
+  color: #666;
+  font-size: 13px;
+}
+
+.route-links {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dev-route-link {
+  display: inline-block;
+  padding: 4px 12px;
+  color: #1890ff;
+  text-decoration: none;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.dev-route-link:hover {
+  color: #40a9ff;
+  border-color: #40a9ff;
+  background: #e6f7ff;
+}
+
+/* 子统计 */
+.sub-stats {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.sub-stat-item {
+  font-size: 13px;
+  color: #888;
+}
+
+.sub-stat-item span {
+  font-weight: 600;
+  color: #333;
+  margin-left: 4px;
+}
+
+@media (max-width: 768px) {
+  .dev-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

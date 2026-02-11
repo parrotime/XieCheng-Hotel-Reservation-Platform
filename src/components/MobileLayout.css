@@ -1,0 +1,31 @@
+.mobile-layout {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  position: relative;
+  box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}
+
+.mobile-content {
+  padding-bottom: 50px;
+}
+
+.mobile-tabbar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  background: #fff;
+  border-top: 1px solid #f0f0f0;
+  z-index: 1000;
+}
+
+/* 独立页面（不带 TabBar）的统一宽度容器 */
+.mobile-standalone {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}

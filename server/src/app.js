@@ -6,6 +6,8 @@ const morgan = require('morgan')
 
 const authRoutes = require('./routes/auth')
 const hotelRoutes = require('./routes/hotels')
+const devRoutes = require('./routes/dev')
+const orderRoutes = require('./routes/orders')
 const pool = require('./config/db')
 
 const app = express()
@@ -19,6 +21,8 @@ app.use(morgan('dev'))
 // 路由
 app.use('/api/auth', authRoutes)
 app.use('/api/hotels', hotelRoutes)
+app.use('/api/dev', devRoutes)
+app.use('/api/orders', orderRoutes)
 
 // 健康检查
 app.get('/api/health', async (req, res) => {

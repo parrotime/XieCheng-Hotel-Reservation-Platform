@@ -8,12 +8,19 @@ async function seed() {
   try {
     await client.query('BEGIN')
 
+    // 更新 role 约束，加入 developer
+    console.log('更新 role 约束...')
+    await client.query(`
+      ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+      ALTER TABLE users ADD CONSTRAINT users_role_check
+        CHECK (role IN ('guest', 'hotel_admin', 'system_admin', 'staff', 'developer'));
+    `)
+
     console.log('清理旧数据...')
     await client.query('DELETE FROM reviews')
-    await client.query('DELETE FROM order_items')
     await client.query('DELETE FROM orders')
-    await client.query('DELETE FROM room_type_prices')
-    await client.query('DELETE FROM rooms')
+    await client.query('DELETE FROM room_types')
+    await client.query('DELETE FROM hotels')
     await client.query('DELETE FROM room_types')
     await client.query('DELETE FROM hotels')
     await client.query('DELETE FROM users')
@@ -27,7 +34,8 @@ async function seed() {
         ('admin',    'admin@hotel.com',    $1, 'system_admin', '系统管理员'),
         ('merchant', 'merchant@hotel.com', $1, 'hotel_admin',  '商户张三'),
         ('guest',    'guest@hotel.com',    $1, 'guest',        '旅客李四'),
-        ('merchant2','merchant2@hotel.com',$1, 'hotel_admin',  '商户王五')
+        ('merchant2','merchant2@hotel.com',$1, 'hotel_admin',  '商户王五'),
+        ('dev',      'dev@hotel.com',      $1, 'developer',    '开发者')
        RETURNING id, username, role`,
       [hash]
     )
@@ -120,32 +128,32 @@ async function seed() {
     console.log('插入房型...')
     const roomTypesData = [
       // 华尔道夫
-      { hotel: 0, name: '豪华大床房', bed: '1张特大床', guests: 2, area: 45, price: 1888 },
-      { hotel: 0, name: '外滩江景套房', bed: '1张特大床', guests: 2, area: 72, price: 3688 },
-      { hotel: 0, name: '双床房', bed: '2张单人床', guests: 2, area: 42, price: 1688 },
+      { hotel: 0, name: '豪华大床房', bed: '1张特大床', guests: 2, area: 45, price: 1888, stock: 8 },
+      { hotel: 0, name: '外滩江景套房', bed: '1张特大床', guests: 2, area: 72, price: 3688, stock: 3 },
+      { hotel: 0, name: '双床房', bed: '2张单人床', guests: 2, area: 42, price: 1688, stock: 10 },
       // 希尔顿
-      { hotel: 1, name: '高级大床房', bed: '1张大床', guests: 2, area: 38, price: 1288 },
-      { hotel: 1, name: '行政套房', bed: '1张特大床', guests: 3, area: 65, price: 2588 },
+      { hotel: 1, name: '高级大床房', bed: '1张大床', guests: 2, area: 38, price: 1288, stock: 12 },
+      { hotel: 1, name: '行政套房', bed: '1张特大床', guests: 3, area: 65, price: 2588, stock: 4 },
       // 西湖国宾馆
-      { hotel: 2, name: '园景大床房', bed: '1张大床', guests: 2, area: 50, price: 1588 },
-      { hotel: 2, name: '湖景套房', bed: '1张特大床', guests: 2, area: 80, price: 3288 },
+      { hotel: 2, name: '园景大床房', bed: '1张大床', guests: 2, area: 50, price: 1588, stock: 6 },
+      { hotel: 2, name: '湖景套房', bed: '1张特大床', guests: 2, area: 80, price: 3288, stock: 2 },
       // 博舍
-      { hotel: 3, name: '庭院房', bed: '1张大床', guests: 2, area: 55, price: 1388 },
-      { hotel: 3, name: '传承套房', bed: '1张特大床', guests: 2, area: 90, price: 2888 },
+      { hotel: 3, name: '庭院房', bed: '1张大床', guests: 2, area: 55, price: 1388, stock: 7 },
+      { hotel: 3, name: '传承套房', bed: '1张特大床', guests: 2, area: 90, price: 2888, stock: 3 },
       // 亚特兰蒂斯
-      { hotel: 4, name: '海景大床房', bed: '1张特大床', guests: 2, area: 48, price: 1988 },
-      { hotel: 4, name: '水底套房', bed: '1张特大床', guests: 2, area: 100, price: 8888 },
-      { hotel: 4, name: '家庭房', bed: '2张大床', guests: 4, area: 60, price: 2688 },
+      { hotel: 4, name: '海景大床房', bed: '1张特大床', guests: 2, area: 48, price: 1988, stock: 15 },
+      { hotel: 4, name: '水底套房', bed: '1张特大床', guests: 2, area: 100, price: 8888, stock: 2 },
+      { hotel: 4, name: '家庭房', bed: '2张大床', guests: 4, area: 60, price: 2688, stock: 5 },
       // 万丽
-      { hotel: 5, name: '标准大床房', bed: '1张大床', guests: 2, area: 35, price: 688 },
-      { hotel: 5, name: '海景双床房', bed: '2张单人床', guests: 2, area: 38, price: 788 },
+      { hotel: 5, name: '标准大床房', bed: '1张大床', guests: 2, area: 35, price: 688, stock: 20 },
+      { hotel: 5, name: '海景双床房', bed: '2张单人床', guests: 2, area: 38, price: 788, stock: 15 },
     ]
 
     for (const rt of roomTypesData) {
       await client.query(
-        `INSERT INTO room_types (hotel_id, name, bed_type, max_guests, area_sqm, default_price)
-         VALUES ($1,$2,$3,$4,$5,$6)`,
-        [hotelIds[rt.hotel], rt.name, rt.bed, rt.guests, rt.area, rt.price]
+        `INSERT INTO room_types (hotel_id, name, bed_type, max_guests, area_sqm, default_price, stock)
+         VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+        [hotelIds[rt.hotel], rt.name, rt.bed, rt.guests, rt.area, rt.price, rt.stock]
       )
     }
     console.log(`插入 ${roomTypesData.length} 个房型`)
@@ -153,9 +161,10 @@ async function seed() {
     await client.query('COMMIT')
     console.log('种子数据插入完成！')
     console.log('\n测试账号（密码均为 123456）:')
-    console.log('  管理员: admin')
-    console.log('  商户:   merchant / merchant2')
-    console.log('  旅客:   guest')
+    console.log('  管理员:   admin')
+    console.log('  商户:     merchant / merchant2')
+    console.log('  旅客:     guest')
+    console.log('  开发者:   dev')
   } catch (err) {
     await client.query('ROLLBACK')
     console.error('种子数据插入失败:', err.message)
