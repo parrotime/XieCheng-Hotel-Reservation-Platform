@@ -1,385 +1,169 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import {
-  SearchBar,
-  Swiper,
-  Button,
-  Selector,
-  Tag,
-  Toast,
-  CascadePicker,
-  Slider
-} from 'antd-mobile'
-import { EnvironmentOutline, CalendarOutline } from 'antd-mobile-icons'
-import { hotCities } from '../../data/cities'
-import { allCities } from '../../data/allCities'
-import { starOptions, quickTags } from '../../constants/filterOptions'
+import React, { useState, useEffect, useRef } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { SearchBar, Swiper, Button, Toast } from 'antd-mobile'
+import { RightOutline, LeftOutline } from 'antd-mobile-icons'
 import { useDateRange } from '../../hooks/useDateRange'
 import DatePickerRow from '../../components/DatePickerRow'
 import './HomePage.css'
 
+// 热门目的地数据
+const destinations = [
+  { name: '上海', image: 'https://images.unsplash.com/photo-1537531383496-f4749b802760?w=400&h=300&fit=crop', tag: '魔都' },
+  { name: '北京', image: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?w=400&h=300&fit=crop', tag: '首都' },
+  { name: '杭州', image: 'https://images.unsplash.com/photo-1599571234909-29ed5d1321d6?w=400&h=300&fit=crop', tag: '西湖' },
+  { name: '成都', image: 'https://images.unsplash.com/photo-1590103514966-5e2a11c13e21?w=400&h=300&fit=crop', tag: '美食' },
+  { name: '三亚', image: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&h=300&fit=crop', tag: '海滩' },
+  { name: '深圳', image: 'https://images.unsplash.com/photo-1533655481794-20a3cf4fc3d0?w=400&h=300&fit=crop', tag: '科技' },
+]
+
+// 快捷入口数据
+const quickEntries = [
+  { icon: '\u{1F31F}', label: '高星推荐', params: { star: '5' } },
+  { icon: '\u{1F4B0}', label: '特价优惠', params: { price: '0-300' } },
+  { icon: '\u2705', label: '免费取消', params: { tags: '免费取消' } },
+  { icon: '\u{1F3E8}', label: '全部酒店', params: {} },
+]
+
+// Banner 数据
+const banners = [
+  {
+    id: 1,
+    image: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=1200&h=400&fit=crop',
+    title: '上海外滩华尔道夫酒店',
+    subtitle: '外滩江景 · 奢华体验',
+    hotelId: 7
+  },
+  {
+    id: 2,
+    image: 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=1200&h=400&fit=crop',
+    title: '北京王府井希尔顿酒店',
+    subtitle: '王府井商圈 · 高端商务',
+    hotelId: 8
+  },
+  {
+    id: 3,
+    image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=1200&h=400&fit=crop',
+    title: '三亚亚特兰蒂斯酒店',
+    subtitle: '海棠湾畔 · 度假首选',
+    hotelId: 11
+  }
+]
+
 function HomePage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const dateRange = useDateRange()
 
-  // 状态管理
   const [searchKey, setSearchKey] = useState('')
-  const [selectedCity, setSelectedCity] = useState('上海')
-  const [selectedStar, setSelectedStar] = useState([])
-  const [selectedTags, setSelectedTags] = useState([])
-  const [priceSlider, setPriceSlider] = useState([0, 5000])
-  const [cityPickerVisible, setCityPickerVisible] = useState(false)
-  const [locating, setLocating] = useState(false)
+  const swiperRef = useRef(null)
+  const [selectedCity, setSelectedCity] = useState(
+    () => sessionStorage.getItem('selectedCity') || '上海'
+  )
+  const [searchHistory, setSearchHistory] = useState([])
 
-  // Banner 数据
-  const banners = [
-    {
-      id: 1,
-      image: 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=1200&h=400&fit=crop',
-      title: '上海外滩华尔道夫酒店',
-      subtitle: '外滩江景 · 奢华体验',
-      hotelId: 1
-    },
-    {
-      id: 2,
-      image: 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=1200&h=400&fit=crop',
-      title: '上海浦东丽思卡尔顿酒店',
-      subtitle: '陆家嘴地标 · 高端商务',
-      hotelId: 2
-    },
-    {
-      id: 3,
-      image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=1200&h=400&fit=crop',
-      title: '杭州西湖凯悦酒店',
-      subtitle: '西湖美景 · 度假首选',
-      hotelId: 3
+  // 从城市选择页返回时接收选中的城市
+  useEffect(() => {
+    if (location.state?.selectedCity) {
+      setSelectedCity(location.state.selectedCity)
+      sessionStorage.setItem('selectedCity', location.state.selectedCity)
+      window.history.replaceState({}, '')
     }
-  ]
+  }, [location.state])
 
-  // 快捷标签点击
-  const handleTagClick = (tag) => {
-    if (selectedTags.includes(tag.value)) {
-      setSelectedTags(selectedTags.filter(t => t !== tag.value))
-    } else {
-      setSelectedTags([...selectedTags, tag.value])
-    }
-  }
+  // 加载搜索历史
+  useEffect(() => {
+    const history = JSON.parse(localStorage.getItem('searchHistory') || '[]')
+    setSearchHistory(history)
+  }, [])
 
   // 搜索处理
   const handleSearch = () => {
-    const cityToUse = selectedCity || '上海'
-
-    if (!selectedCity) {
-      Toast.show({
-        icon: 'info',
-        content: '未选择城市，默认搜索上海地区',
-      })
-    }
-
     const params = new URLSearchParams()
-    params.append('city', cityToUse)
+    params.append('city', selectedCity)
     if (searchKey) params.append('keyword', searchKey)
     if (dateRange.checkInDate) params.append('checkIn', dateRange.checkInDate.toLocaleDateString('zh-CN'))
     if (dateRange.checkOutDate) params.append('checkOut', dateRange.checkOutDate.toLocaleDateString('zh-CN'))
-    if (selectedStar.length > 0) params.append('star', selectedStar.join(','))
-    if (selectedTags.length > 0) params.append('tags', selectedTags.join(','))
 
     // 保存搜索历史
-    const searchHistory = JSON.parse(localStorage.getItem('searchHistory') || '[]')
+    const history = JSON.parse(localStorage.getItem('searchHistory') || '[]')
     const newSearch = {
-      city: cityToUse,
+      city: selectedCity,
       keyword: searchKey,
       date: new Date().toLocaleString('zh-CN'),
       timestamp: Date.now()
     }
-    searchHistory.unshift(newSearch)
-    localStorage.setItem('searchHistory', JSON.stringify(searchHistory.slice(0, 5)))
+    history.unshift(newSearch)
+    localStorage.setItem('searchHistory', JSON.stringify(history.slice(0, 5)))
+    setSearchHistory(history.slice(0, 5))
 
     navigate(`/list?${params.toString()}`)
   }
 
-  // Banner 点击
-  const handleBannerClick = (hotelId) => {
-    navigate(`/detail/${hotelId}`)
+  // 快捷入口点击
+  const handleQuickEntry = (entry) => {
+    const params = new URLSearchParams({ city: selectedCity, ...entry.params })
+    navigate(`/list?${params.toString()}`)
   }
 
-  // 定位当前城市
-  const handleLocationClick = () => {
-    if (!navigator.geolocation) {
-      Toast.show({
-        icon: 'fail',
-        content: '您的浏览器不支持定位功能',
-      })
-      return
-    }
-
-    setLocating(true)
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords
-
-        try {
-          const response = await fetch(
-            `https://restapi.amap.com/v3/geocode/regeo?location=${longitude},${latitude}&key=&extensions=base&output=json`
-          )
-          const data = await response.json()
-
-          if (data.status === '1' && data.regeocode) {
-            const city = data.regeocode.addressComponent.city ||
-                        data.regeocode.addressComponent.province
-            const cityName = city.replace(/市$/, '')
-            setSelectedCity(cityName)
-            Toast.show({ icon: 'success', content: `定位成功：${cityName}` })
-          } else {
-            const cityName = getCityByCoordinates(latitude, longitude)
-            setSelectedCity(cityName)
-            Toast.show({ icon: 'success', content: `定位成功：${cityName}` })
-          }
-        } catch (error) {
-          console.error('定位失败:', error)
-          Toast.show({ icon: 'fail', content: '定位失败，请手动选择城市' })
-        } finally {
-          setLocating(false)
-        }
-      },
-      (error) => {
-        console.error('定位错误:', error)
-        setLocating(false)
-
-        let errorMsg = '定位失败'
-        if (error.code === 1) errorMsg = '您拒绝了定位权限'
-        else if (error.code === 2) errorMsg = '无法获取位置信息'
-        else if (error.code === 3) errorMsg = '定位超时'
-
-        Toast.show({ icon: 'fail', content: errorMsg })
-      },
-      { timeout: 10000, enableHighAccuracy: true }
-    )
+  // 热门目的地点击
+  const handleDestination = (cityName) => {
+    navigate(`/list?city=${cityName}`)
   }
 
-  // 根据经纬度粗略判断城市（备用方案）
-  const getCityByCoordinates = (lat, lng) => {
-    const cityRanges = [
-      { name: '北京', lat: [39.4, 41.1], lng: [115.7, 117.4] },
-      { name: '上海', lat: [30.7, 31.5], lng: [121.0, 122.0] },
-      { name: '广州', lat: [22.5, 23.5], lng: [113.0, 114.0] },
-      { name: '深圳', lat: [22.4, 22.8], lng: [113.7, 114.6] },
-      { name: '杭州', lat: [29.9, 30.6], lng: [119.7, 120.9] },
-      { name: '成都', lat: [30.1, 31.4], lng: [103.5, 104.9] },
-    ]
+  // 历史记录点击
+  const handleHistoryClick = (item) => {
+    const params = new URLSearchParams()
+    params.append('city', item.city)
+    if (item.keyword) params.append('keyword', item.keyword)
+    navigate(`/list?${params.toString()}`)
+  }
 
-    for (const city of cityRanges) {
-      if (lat >= city.lat[0] && lat <= city.lat[1] &&
-          lng >= city.lng[0] && lng <= city.lng[1]) {
-        return city.name
-      }
-    }
-
-    return '上海'
+  // 清除搜索历史
+  const clearHistory = () => {
+    localStorage.removeItem('searchHistory')
+    setSearchHistory([])
+    Toast.show({ content: '已清除搜索历史' })
   }
 
   return (
     <div className="home-page">
-      {/* 顶部 Banner */}
-      <div className="banner-section">
-        <Swiper
-          autoplay={{ delay: 3000 }}
-          loop
-          allowTouchMove={true}
-          style={{ '--border-radius': '8px' }}
-          indicator={(total, current) => (
-            <div className="custom-indicator">
-              {current + 1} / {total}
-            </div>
-          )}
-        >
-          {banners.map(banner => (
-            <Swiper.Item key={banner.id}>
-              <div
-                className="banner-item"
-                onClick={() => handleBannerClick(banner.hotelId)}
-              >
-                <img src={banner.image} alt={banner.title} />
-                <div className="banner-content">
-                  <div className="banner-title">{banner.title}</div>
-                  <div className="banner-subtitle">{banner.subtitle}</div>
-                </div>
-              </div>
-            </Swiper.Item>
-          ))}
-        </Swiper>
+      {/* 顶部渐变背景区 */}
+      <div className="home-header">
+        <div className="header-title">住哪儿</div>
+        <div className="header-subtitle">发现全球优质酒店</div>
       </div>
 
-      {/* 核心查询区域 */}
-      <div className="search-section">
-        <h2>查找酒店</h2>
-
-        {/* 城市选择 */}
-        <div className="search-item">
-          <div className="search-label">
-            <EnvironmentOutline /> 当前地点
+      {/* 核心搜索卡片 */}
+      <div className="search-card">
+        {/* 城市选择行 */}
+        <div className="city-row" onClick={() => navigate('/city-select')}>
+          <div className="city-left">
+            <span className="city-icon">{'\u{1F4CD}'}</span>
+            <span className="city-name">{selectedCity}</span>
           </div>
-
-          <Selector
-            options={hotCities.map(city => ({
-              label: city.name,
-              value: city.name
-            }))}
-            value={[selectedCity]}
-            onChange={(arr) => setSelectedCity(arr[0])}
-            style={{ '--border-radius': '8px' }}
-          />
-
-          <Button
-            block
-            fill="outline"
-            style={{ marginTop: '12px' }}
-            onClick={() => setCityPickerVisible(true)}
-          >
-            选择其他城市
-          </Button>
-
-          <Button
-            block
-            color="primary"
-            fill="outline"
-            loading={locating}
-            style={{ marginTop: '12px' }}
-            onClick={handleLocationClick}
-          >
-            {locating ? '定位中...' : '📍 定位当前城市'}
-          </Button>
+          <RightOutline className="city-arrow" />
         </div>
 
-        {/* 城市选择弹窗 */}
-        <CascadePicker
-          title="选择城市"
-          visible={cityPickerVisible}
-          onClose={() => setCityPickerVisible(false)}
-          options={[
-            {
-              label: '热门城市',
-              value: 'hot',
-              children: hotCities.map(c => ({ label: c.name, value: c.name }))
-            },
-            {
-              label: '全部城市',
-              value: 'all',
-              children: allCities
-                .reduce((acc, city) => {
-                  const province = acc.find(p => p.label === city.province)
-                  if (province) {
-                    province.children.push({ label: city.name, value: city.name })
-                  } else {
-                    acc.push({
-                      label: city.province,
-                      value: city.province,
-                      children: [{ label: city.name, value: city.name }]
-                    })
-                  }
-                  return acc
-                }, [])
-            }
-          ]}
-          onConfirm={(value) => {
-            setSelectedCity(value[value.length - 1])
-            setCityPickerVisible(false)
-          }}
-        />
+        <div className="card-divider" />
 
-        {/* 关键字搜索 */}
-        <div className="search-item">
+        {/* 日期选择行 */}
+        <div className="date-row">
+          <DatePickerRow dateRange={dateRange} separator="→" />
+          {dateRange.nights > 0 && (
+            <div className="nights-badge">共{dateRange.nights}晚</div>
+          )}
+        </div>
+
+        <div className="card-divider" />
+
+        {/* 关键词搜索 */}
+        <div className="keyword-row">
           <SearchBar
             placeholder="搜索酒店名称或地标"
             value={searchKey}
             onChange={setSearchKey}
-            style={{ '--border-radius': '8px' }}
+            style={{ '--border-radius': '8px', '--background': '#f5f5f5' }}
           />
-        </div>
-
-        {/* 入住日期 */}
-        <div className="search-item">
-          <div className="search-label">
-            <CalendarOutline /> 入住日期
-          </div>
-          <DatePickerRow dateRange={dateRange} />
-        </div>
-
-        {/* 显示入住天数 */}
-        {dateRange.nights > 0 && (
-          <div style={{
-            marginTop: '12px',
-            padding: '8px 12px',
-            background: '#e6f4ff',
-            borderRadius: '8px',
-            textAlign: 'center',
-            fontSize: '14px',
-            color: '#1677ff'
-          }}>
-            📅 共入住 {dateRange.nights} 晚
-          </div>
-        )}
-
-        {/* 筛选条件 - 星级 */}
-        <div className="search-item">
-          <div className="search-label">星级筛选</div>
-          <Selector
-            options={starOptions}
-            multiple
-            value={selectedStar}
-            onChange={setSelectedStar}
-            style={{ '--border-radius': '8px' }}
-          />
-        </div>
-
-        {/* 价格区间 */}
-        <div className="search-item">
-          <div className="search-label">价格区间</div>
-
-          <div style={{
-            marginBottom: '12px',
-            fontSize: '16px',
-            fontWeight: 'bold',
-            color: '#1677ff',
-            textAlign: 'center'
-          }}>
-            ¥{priceSlider[0]} - ¥{priceSlider[1]}
-          </div>
-
-          <Slider
-            range
-            min={0}
-            max={5000}
-            step={100}
-            value={priceSlider}
-            onChange={setPriceSlider}
-            style={{ '--fill-color': '#1677ff' }}
-          />
-        </div>
-
-        {/* 快捷标签 */}
-        <div className="search-item">
-          <div className="search-label">快捷标签（可多选）</div>
-          <div className="tags-container">
-            {quickTags.map(tag => (
-              <Tag
-                key={tag.value}
-                color={selectedTags.includes(tag.value) ? 'primary' : 'default'}
-                fill={selectedTags.includes(tag.value) ? 'solid' : 'outline'}
-                style={{
-                  marginRight: '8px',
-                  marginBottom: '8px',
-                  fontSize: '14px',
-                  padding: '6px 12px',
-                  cursor: 'pointer'
-                }}
-                onClick={() => handleTagClick(tag)}
-              >
-                {tag.label}
-              </Tag>
-            ))}
-          </div>
         </div>
 
         {/* 搜索按钮 */}
@@ -387,12 +171,106 @@ function HomePage() {
           block
           color="primary"
           size="large"
+          className="search-btn"
           onClick={handleSearch}
-          style={{ marginTop: '20px' }}
         >
-          查询酒店
+          搜索酒店
         </Button>
       </div>
+
+      {/* 快捷功能入口 */}
+      <div className="quick-entries">
+        {quickEntries.map((entry, index) => (
+          <div
+            key={index}
+            className="quick-entry-item"
+            onClick={() => handleQuickEntry(entry)}
+          >
+            <div className="entry-icon">{entry.icon}</div>
+            <div className="entry-label">{entry.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Banner 轮播 */}
+      <div className="banner-section">
+        <div className="banner-wrapper">
+          <Swiper
+            ref={swiperRef}
+            autoplay={{ delay: 3000 }}
+            loop
+            style={{ '--border-radius': '12px' }}
+            indicator={(total, current) => (
+              <div className="custom-indicator">{current + 1} / {total}</div>
+            )}
+          >
+            {banners.map(banner => (
+              <Swiper.Item key={banner.id}>
+                <div className="banner-item" onClick={() => navigate(`/detail/${banner.hotelId}`)}>
+                  <img src={banner.image} alt={banner.title} />
+                  <div className="banner-overlay">
+                    <div className="banner-title">{banner.title}</div>
+                    <div className="banner-subtitle">{banner.subtitle}</div>
+                  </div>
+                </div>
+              </Swiper.Item>
+            ))}
+          </Swiper>
+          <div className="banner-nav banner-prev" onClick={() => swiperRef.current?.swipePrev()}>
+            <LeftOutline />
+          </div>
+          <div className="banner-nav banner-next" onClick={() => swiperRef.current?.swipeNext()}>
+            <RightOutline />
+          </div>
+        </div>
+      </div>
+
+      {/* 热门目的地 */}
+      <div className="section-block">
+        <div className="section-header">
+          <span className="section-title">热门目的地</span>
+        </div>
+        <div className="destination-grid">
+          {destinations.map((dest, index) => (
+            <div
+              key={index}
+              className="destination-card"
+              onClick={() => handleDestination(dest.name)}
+            >
+              <img src={dest.image} alt={dest.name} />
+              <div className="dest-info">
+                <span className="dest-name">{dest.name}</span>
+                <span className="dest-tag">{dest.tag}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 最近搜索 */}
+      {searchHistory.length > 0 && (
+        <div className="section-block">
+          <div className="section-header">
+            <span className="section-title">最近搜索</span>
+            <span className="section-action" onClick={clearHistory}>清除</span>
+          </div>
+          <div className="history-list">
+            {searchHistory.map((item, index) => (
+              <div
+                key={index}
+                className="history-item"
+                onClick={() => handleHistoryClick(item)}
+              >
+                <span className="history-city">{item.city}</span>
+                {item.keyword && <span className="history-keyword">{item.keyword}</span>}
+                <span className="history-date">{item.date}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div style={{ height: '20px' }} />
     </div>
   )
 }

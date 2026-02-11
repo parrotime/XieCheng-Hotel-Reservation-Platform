@@ -1,28 +1,206 @@
 /* 移动端视口限制 */
 .home-page {
   min-height: 100vh;
-  background: #f5f5f5;  /* 改为浅灰色背景 */
-  padding-bottom: 20px;
-  max-width: 480px;  /* 添加最大宽度，模拟手机 */
-  margin: 0 auto;  /* 居中显示 */
-  box-shadow: 0 0 20px rgba(0,0,0,0.1);  /* 添加阴影，更像手机屏幕 */
+  background: #f5f5f5;
+  max-width: 480px;
+  margin: 0 auto;
+  box-shadow: 0 0 20px rgba(0,0,0,0.1);
 }
 
+/* ========== 顶部渐变背景 ========== */
+.home-header {
+  background: linear-gradient(135deg, #1677ff 0%, #69b4ff 100%);
+  padding: 40px 20px 60px;
+  color: #fff;
+}
 
-/* Banner 区域 */
+.header-title {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.header-subtitle {
+  font-size: 14px;
+  opacity: 0.85;
+  margin-top: 4px;
+}
+
+/* ========== 核心搜索卡片 ========== */
+.search-card {
+  background: #fff;
+  margin: -30px 14px 0;
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  position: relative;
+  z-index: 10;
+}
+
+.card-divider {
+  height: 1px;
+  background: #f0f0f0;
+  margin: 12px 0;
+}
+
+/* 城市选择行 */
+.city-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 4px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.city-row:active {
+  background: #f5f5f5;
+}
+
+.city-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.city-icon {
+  font-size: 20px;
+}
+
+.city-name {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+}
+
+.city-arrow {
+  color: #999;
+  font-size: 14px;
+}
+
+/* 日期选择行 */
+.date-row {
+  position: relative;
+}
+
+.date-row .date-picker-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.date-row .date-picker-row button {
+  flex: 1;
+  border-radius: 8px;
+}
+
+.nights-badge {
+  text-align: center;
+  margin-top: 6px;
+  font-size: 13px;
+  color: #1677ff;
+  font-weight: 500;
+}
+
+/* 关键词搜索 */
+.keyword-row {
+  margin-top: 2px;
+}
+
+/* 搜索按钮 */
+.search-btn {
+  margin-top: 14px;
+  border-radius: 10px !important;
+  height: 46px !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+}
+
+/* ========== 快捷功能入口 ========== */
+.quick-entries {
+  display: flex;
+  justify-content: space-around;
+  padding: 20px 14px 8px;
+}
+
+.quick-entry-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.quick-entry-item:active {
+  transform: scale(0.92);
+}
+
+.entry-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.entry-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #666;
+}
+
+/* ========== Banner 轮播 ========== */
 .banner-section {
-  padding: 12px;
-  background: white;
-  margin-bottom: 12px;
+  padding: 16px 14px 0;
+}
+
+.banner-wrapper {
+  position: relative;
+}
+
+.banner-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  font-size: 14px;
+  color: #333;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  transition: background 0.2s;
+}
+
+.banner-nav:active {
+  background: rgba(255,255,255,1);
+}
+
+.banner-prev {
+  left: 8px;
+}
+
+.banner-next {
+  right: 8px;
 }
 
 .banner-item {
   position: relative;
   width: 100%;
-  height: 180px;
+  height: 160px;
   cursor: pointer;
   overflow: hidden;
-  border-radius: 8px;
+  border-radius: 12px;
 }
 
 .banner-item img {
@@ -33,123 +211,171 @@
 }
 
 .banner-item:active img {
-  transform: scale(1.05);
+  transform: scale(1.03);
+}
+
+.banner-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 30px 14px 12px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.6));
 }
 
 .banner-title {
-  position: absolute;
-  bottom: 40px;  /* 调整位置 */
-  left: 0;
-  right: 0;
-  color: white;
-  padding: 0 15px;
-  font-size: 20px;
-  font-weight: bold;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 600;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
 }
 
 .banner-subtitle {
+  color: rgba(255,255,255,0.9);
+  font-size: 13px;
+  margin-top: 2px;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.custom-indicator {
   position: absolute;
-  bottom: 20px;  /* 新增副标题 */
-  left: 0;
-  right: 0;
-  color: white;
-  padding: 0 15px;
-  font-size: 14px;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-  opacity: 0.9;
+  bottom: 8px;
+  right: 12px;
+  background: rgba(0,0,0,0.4);
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
 }
 
-/* 搜索区域 */
-.search-section {
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  margin: 0 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+/* ========== 通用区块 ========== */
+.section-block {
+  padding: 20px 14px 0;
 }
 
-.search-section h2 {
-  margin: 0 0 20px 0;
-  font-size: 20px;
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.section-title {
+  font-size: 17px;
+  font-weight: 600;
   color: #333;
 }
 
-.search-item {
-  margin-bottom: 16px;
+.section-action {
+  font-size: 13px;
+  color: #999;
+  cursor: pointer;
 }
 
-.search-label {
+/* ========== 热门目的地 ========== */
+.destination-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.destination-card {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  aspect-ratio: 1 / 1.1;
+}
+
+.destination-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.destination-card:active img {
+  transform: scale(1.05);
+}
+
+.dest-info {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px 8px 8px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.55));
+  display: flex;
+  flex-direction: column;
+}
+
+.dest-name {
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.dest-tag {
+  color: rgba(255,255,255,0.8);
+  font-size: 11px;
+  margin-top: 1px;
+}
+
+/* ========== 最近搜索 ========== */
+.history-list {
+  background: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.history-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 8px;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #f5f5f5;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.history-item:last-child {
+  border-bottom: none;
+}
+
+.history-item:active {
+  background: #f5f5f5;
+}
+
+.history-city {
   font-size: 15px;
   font-weight: 500;
   color: #333;
 }
 
-.date-picker-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.history-keyword {
+  font-size: 13px;
+  color: #1677ff;
+  background: #e6f4ff;
+  padding: 2px 8px;
+  border-radius: 4px;
 }
 
-.date-picker-row button {
-  flex: 1;
-  border-radius: 8px;
+.history-date {
+  font-size: 12px;
+  color: #bbb;
+  margin-left: auto;
 }
 
-/* 原生日期选择器样式 */
-.date-input {
-  flex: 1;
-  height: 44px;
-  padding: 0 12px;
-  border: 1px solid #d9d9d9;
-  border-radius: 8px;
-  font-size: 15px;
-  outline: none;
-  transition: border-color 0.3s;
-}
-
-.date-input:focus {
-  border-color: #1677ff;
-}
-
-.date-input::-webkit-calendar-picker-indicator {
-  cursor: pointer;
-}
-
-.tags-container {
-  display: flex;
-  flex-wrap: wrap;
-}
-
-.tags-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-/* 让标签更大更好点击 */
-.tags-container .adm-tag {
-  min-height: 36px;
-  line-height: 36px;
-  padding: 0 16px !important;
-  font-size: 14px !important;
-  transition: all 0.3s;
-}
-
-.tags-container .adm-tag:active {
-  transform: scale(0.95);
-}
-/* 响应式优化 */
+/* ========== 响应式 ========== */
 @media (max-width: 375px) {
   .banner-item {
-    height: 150px;
+    height: 130px;
   }
-  
-  .search-section {
-    padding: 15px;
+  .search-card {
+    margin: -30px 10px 0;
+    padding: 14px;
+  }
+  .destination-grid {
+    gap: 8px;
   }
 }

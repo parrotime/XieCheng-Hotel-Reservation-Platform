@@ -6,6 +6,7 @@ import './App.css'
 import HomePage from './pages/mobile/HomePage'
 import HotelList from './pages/mobile/HotelList'
 import HotelDetail from './pages/mobile/HotelDetail'
+import CitySelect from './pages/mobile/CitySelect'
 
 // PC端页面
 import Login from './pages/pc/Login'
@@ -22,6 +23,7 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/list" element={<HotelList />} />
             <Route path="/detail/:id" element={<HotelDetail />} />
+            <Route path="/city-select" element={<CitySelect />} />
             
             {/* PC端路由 */}
             <Route path="/login" element={<Login />} />

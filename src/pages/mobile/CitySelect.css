@@ -1,0 +1,103 @@
+.city-select-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.city-search-bar {
+  padding: 8px 12px;
+  background: #fff;
+}
+
+.city-content {
+  padding: 0 12px 20px;
+  overflow-y: auto;
+}
+
+/* 区块标题 */
+.city-section {
+  margin-top: 16px;
+}
+
+.city-section .section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 10px;
+  padding-left: 4px;
+}
+
+/* 定位按钮 */
+.locate-btn {
+  background: #fff;
+  border: 1px dashed #1677ff;
+  color: #1677ff;
+  text-align: center;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.locate-btn:active {
+  background: #e6f4ff;
+}
+
+.locate-btn.loading {
+  color: #999;
+  border-color: #d9d9d9;
+  cursor: default;
+}
+
+/* 城市网格 */
+.city-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.city-item {
+  background: #fff;
+  text-align: center;
+  padding: 10px 0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid #f0f0f0;
+}
+
+.city-item:active {
+  background: #e6f4ff;
+  border-color: #1677ff;
+  color: #1677ff;
+}
+
+.city-item.hot {
+  background: #f0f7ff;
+  border-color: #d6e8ff;
+  font-weight: 500;
+}
+
+/* 省份分组 */
+.province-group {
+  margin-bottom: 16px;
+}
+
+.province-name {
+  font-size: 13px;
+  color: #999;
+  margin-bottom: 8px;
+  padding-left: 4px;
+}
+
+/* 无结果 */
+.no-result {
+  text-align: center;
+  color: #999;
+  padding: 40px 0;
+  font-size: 14px;
+}
