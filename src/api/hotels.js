@@ -54,3 +54,10 @@ export function getInventory(params) {
 export function updateInventory(data) {
   return request.put('/hotels/merchant/inventory', data)
 }
+
+// 商户：上传图片
+export function uploadImage(formData) {
+  return request.post('/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}

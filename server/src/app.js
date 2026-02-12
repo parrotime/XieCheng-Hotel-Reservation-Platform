@@ -4,10 +4,13 @@ const express = require('express')
 const cors = require('cors')
 const morgan = require('morgan')
 
+const path = require('path')
+
 const authRoutes = require('./routes/auth')
 const hotelRoutes = require('./routes/hotels')
 const devRoutes = require('./routes/dev')
 const orderRoutes = require('./routes/orders')
+const uploadRoutes = require('./routes/upload')
 const pool = require('./config/db')
 const { startScheduler } = require('./scheduler')
 
@@ -19,11 +22,15 @@ app.use(cors())
 app.use(express.json())
 app.use(morgan('dev'))
 
+// 静态文件：上传的图片
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
+
 // 路由
 app.use('/api/auth', authRoutes)
 app.use('/api/hotels', hotelRoutes)
 app.use('/api/dev', devRoutes)
 app.use('/api/orders', orderRoutes)
+app.use('/api/upload', uploadRoutes)
 
 // 健康检查
 app.get('/api/health', async (req, res) => {
