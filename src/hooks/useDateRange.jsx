@@ -1,25 +1,22 @@
-import { useState } from 'react'
+import { useState, useContext, createContext } from 'react'
 import { Toast } from 'antd-mobile'
 import { formatDate, calculateNights } from '../utils/dateUtils'
 
+const DateRangeContext = createContext(null)
+
 /**
- * 入住/退房日期选择 Hook（移动端专用）
- * 封装日期状态、弹窗可见性、校验逻辑和入住天数计算
- * @returns {Object} 日期相关状态和操作方法
+ * 日期状态 Provider — 在 App 顶层包裹一次，所有页面共享同一份日期
  */
-export function useDateRange() {
+export function DateRangeProvider({ children }) {
   const [checkInDate, setCheckInDate] = useState(null)
   const [checkOutDate, setCheckOutDate] = useState(null)
   const [checkInVisible, setCheckInVisible] = useState(false)
   const [checkOutVisible, setCheckOutVisible] = useState(false)
 
-  // 自动计算入住晚数
   const nights = calculateNights(checkInDate, checkOutDate)
 
-  // 入住日期确认（含校验）
   const handleCheckInConfirm = (value) => {
     const selectedDate = new Date(value)
-
     if (checkOutDate) {
       const checkOut = new Date(checkOutDate)
       if (selectedDate >= checkOut) {
@@ -27,15 +24,12 @@ export function useDateRange() {
         return
       }
     }
-
     setCheckInDate(selectedDate)
     Toast.show({ icon: 'success', content: '入住日期已选择' })
   }
 
-  // 退房日期确认（含校验）
   const handleCheckOutConfirm = (value) => {
     const selectedDate = new Date(value)
-
     if (checkInDate) {
       const checkIn = new Date(checkInDate)
       if (selectedDate <= checkIn) {
@@ -43,12 +37,11 @@ export function useDateRange() {
         return
       }
     }
-
     setCheckOutDate(selectedDate)
     Toast.show({ icon: 'success', content: '退房日期已选择' })
   }
 
-  return {
+  const value = {
     checkInDate,
     checkOutDate,
     checkInVisible,
@@ -60,4 +53,22 @@ export function useDateRange() {
     handleCheckOutConfirm,
     formatDate,
   }
+
+  return (
+    <DateRangeContext.Provider value={value}>
+      {children}
+    </DateRangeContext.Provider>
+  )
+}
+
+/**
+ * 入住/退房日期选择 Hook
+ * 从 Context 读取共享日期状态，首页/列表页/详情页自动同步
+ */
+export function useDateRange() {
+  const ctx = useContext(DateRangeContext)
+  if (!ctx) {
+    throw new Error('useDateRange must be used within a DateRangeProvider')
+  }
+  return ctx
 }

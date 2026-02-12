@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { SearchBar, Swiper, Button, Toast } from 'antd-mobile'
 import { RightOutline, LeftOutline } from 'antd-mobile-icons'
-import { useDateRange } from '../../hooks/useDateRange'
+import { useDateRange } from '../../hooks/useDateRange.jsx'
 import DatePickerRow from '../../components/DatePickerRow'
 import './HomePage.css'
 

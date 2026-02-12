@@ -20,7 +20,7 @@ import {
 } from 'antd-mobile-icons'
 import { getHotelById } from '../../api/hotels'
 import { createOrder } from '../../api/orders'
-import { useDateRange } from '../../hooks/useDateRange'
+import { useDateRange } from '../../hooks/useDateRange.jsx'
 import { formatDate } from '../../utils/dateUtils'
 import StarRating from '../../components/StarRating'
 import RatingDisplay from '../../components/RatingDisplay'
@@ -42,6 +42,7 @@ function HotelDetail() {
   // 自定义对话框状态
   const [confirmVisible, setConfirmVisible] = useState(false)
   const [confirmData, setConfirmData] = useState(null)
+  const [roomCount, setRoomCount] = useState(1)
 
   // 加载酒店数据
   useEffect(() => {
@@ -95,18 +96,18 @@ function HotelDetail() {
       return
     }
 
-    const totalPrice = room.default_price * dateRange.nights
-
+    setRoomCount(1)
     setConfirmData({
       hotelName: hotel.name,
       roomType: room.name,
       roomTypeId: room.id,
+      unitPrice: room.default_price,
+      stock: room.stock,
       checkIn: formatDate(dateRange.checkInDate),
       checkOut: formatDate(dateRange.checkOutDate),
       checkInRaw: dateRange.checkInDate,
       checkOutRaw: dateRange.checkOutDate,
       nights: dateRange.nights,
-      totalPrice: totalPrice,
       isWarning: false
     })
     setConfirmVisible(true)
@@ -130,6 +131,7 @@ function HotelDetail() {
         room_type_id: confirmData.roomTypeId,
         check_in: confirmData.checkInRaw,
         check_out: confirmData.checkOutRaw,
+        room_count: roomCount,
       })
       setConfirmVisible(false)
       Toast.show({ icon: 'success', content: '下单成功，请完成支付' })
@@ -202,9 +204,27 @@ function HotelDetail() {
                   <p>入住：{confirmData.checkIn}</p>
                   <p>退房：{confirmData.checkOut}</p>
                   <p>共 {confirmData.nights} 晚</p>
-                  <div style={{ height: '1px', background: '#f0f0f0', margin: '16px 0' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '12px 0' }}>
+                    <span>房间数</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <button
+                        className="modal-btn"
+                        style={{ width: 32, height: 32, borderRadius: '50%', padding: 0, fontSize: 18, background: '#f5f5f5', border: '1px solid #ddd' }}
+                        onClick={() => setRoomCount(c => Math.max(1, c - 1))}
+                        disabled={roomCount <= 1}
+                      >−</button>
+                      <span style={{ fontSize: 18, fontWeight: 600, minWidth: 20, textAlign: 'center' }}>{roomCount}</span>
+                      <button
+                        className="modal-btn"
+                        style={{ width: 32, height: 32, borderRadius: '50%', padding: 0, fontSize: 18, background: '#f5f5f5', border: '1px solid #ddd' }}
+                        onClick={() => setRoomCount(c => Math.min(confirmData.stock || 10, c + 1))}
+                        disabled={roomCount >= (confirmData.stock || 10)}
+                      >+</button>
+                    </div>
+                  </div>
+                  <div style={{ height: '1px', background: '#f0f0f0', margin: '12px 0' }} />
                   <p style={{ color: '#ff6b6b', fontSize: '20px', fontWeight: 'bold' }}>
-                    总价：¥{confirmData.totalPrice}
+                    总价：¥{confirmData.unitPrice * confirmData.nights * roomCount}
                   </p>
                 </>
               )}

@@ -9,6 +9,7 @@ const hotelRoutes = require('./routes/hotels')
 const devRoutes = require('./routes/dev')
 const orderRoutes = require('./routes/orders')
 const pool = require('./config/db')
+const { startScheduler } = require('./scheduler')
 
 const app = express()
 const PORT = process.env.PORT || 3000
@@ -45,4 +46,5 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`[Server] 后端服务已启动: http://localhost:${PORT}`)
   console.log(`[Server] 健康检查: http://localhost:${PORT}/api/health`)
+  startScheduler()
 })

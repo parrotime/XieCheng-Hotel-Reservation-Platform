@@ -18,9 +18,8 @@ async function seed() {
 
     console.log('清理旧数据...')
     await client.query('DELETE FROM reviews')
+    await client.query('DELETE FROM room_inventory')
     await client.query('DELETE FROM orders')
-    await client.query('DELETE FROM room_types')
-    await client.query('DELETE FROM hotels')
     await client.query('DELETE FROM room_types')
     await client.query('DELETE FROM hotels')
     await client.query('DELETE FROM users')

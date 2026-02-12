@@ -18,8 +18,8 @@ function PayPage() {
   // 加载订单数据
   useEffect(() => {
     if (!order) {
-      getOrderById(id).then(setOrder).catch(() => {
-        Toast.show({ icon: 'fail', content: '订单不存在' })
+      getOrderById(id).then(setOrder).catch((err) => {
+        Toast.show({ icon: 'fail', content: err.message || '订单不存在' })
         navigate('/orders')
       })
     }
@@ -63,10 +63,9 @@ function PayPage() {
     setPaying(true)
     try {
       await payOrder(id)
-      Toast.show({ icon: 'success', content: '支付成功' })
-      navigate('/orders')
+      navigate('/pay-success', { state: { order }, replace: true })
     } catch (err) {
-      Toast.show({ icon: 'fail', content: err.response?.data?.error || '支付失败' })
+      Toast.show({ icon: 'fail', content: err.message || '支付失败' })
     } finally {
       setPaying(false)
     }
@@ -139,6 +138,12 @@ function PayPage() {
           <span className="pay-info-label">晚数</span>
           <span className="pay-info-value">{order.nights}晚</span>
         </div>
+        {order.room_count > 1 && (
+          <div className="pay-info-row">
+            <span className="pay-info-label">房间数</span>
+            <span className="pay-info-value">{order.room_count}间</span>
+          </div>
+        )}
       </div>
 
       {/* 支付方式 */}

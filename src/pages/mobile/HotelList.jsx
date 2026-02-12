@@ -12,7 +12,7 @@ import {
 import { LeftOutline } from 'antd-mobile-icons'
 import { getHotels } from '../../api/hotels'
 import { starOptions, priceOptions, sortOptions, facilityOptions } from '../../constants/filterOptions'
-import { useDateRange } from '../../hooks/useDateRange'
+import { useDateRange } from '../../hooks/useDateRange.jsx'
 import DatePickerRow from '../../components/DatePickerRow'
 import HotelCard from '../../components/HotelCard'
 import './HotelList.css'

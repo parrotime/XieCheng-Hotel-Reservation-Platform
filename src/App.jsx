@@ -2,6 +2,10 @@ import React, { Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import './App.css'
 
+// 全局组件
+import LoginExpiredModal from './components/LoginExpiredModal'
+import { DateRangeProvider } from './hooks/useDateRange.jsx'
+
 // 移动端布局
 import MobileLayout from './components/MobileLayout'
 
@@ -13,6 +17,8 @@ import CitySelect from './pages/mobile/CitySelect'
 import OrdersPage from './pages/mobile/OrdersPage'
 import ProfilePage from './pages/mobile/ProfilePage'
 import PayPage from './pages/mobile/PayPage'
+import PaySuccess from './pages/mobile/PaySuccess'
+import OrderDetail from './pages/mobile/OrderDetail'
 
 // PC端页面
 import Login from './pages/pc/Login'
@@ -27,6 +33,8 @@ const DevDashboard = import.meta.env.DEV
 function App() {
   return (
     <BrowserRouter>
+      <DateRangeProvider>
+      <LoginExpiredModal />
       <div className="App">
         {/* 路由配置 */}
         <Routes>
@@ -42,7 +50,9 @@ function App() {
             <Route path="/detail/:id" element={<HotelDetail />} />
             <Route path="/city-select" element={<CitySelect />} />
             <Route path="/pay/:id" element={<PayPage />} />
-            
+            <Route path="/pay-success" element={<PaySuccess />} />
+            <Route path="/order/:id" element={<OrderDetail />} />
+
             {/* PC端路由 */}
             <Route path="/login" element={<Login />} />
             <Route path="/manage" element={<HotelManage />} />
@@ -56,11 +66,12 @@ function App() {
                 </Suspense>
               } />
             )}
-            
+
             {/* 404 重定向到首页 */}
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
+      </DateRangeProvider>
     </BrowserRouter>
   )
 }

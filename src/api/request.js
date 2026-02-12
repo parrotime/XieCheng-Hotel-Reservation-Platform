@@ -24,9 +24,9 @@ request.interceptors.response.use(
       // token 过期或无效，清除登录状态
       localStorage.removeItem('token')
       localStorage.removeItem('userInfo')
-      // 如果不在登录页，跳转到登录页
+      // 派发自定义事件，由 LoginExpiredModal 监听并弹窗提示
       if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login'
+        window.dispatchEvent(new CustomEvent('auth:expired'))
       }
     }
 

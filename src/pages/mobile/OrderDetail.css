@@ -1,0 +1,297 @@
+.order-detail-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+  max-width: 480px;
+  margin: 0 auto;
+  padding-bottom: 80px;
+}
+
+/* 状态头部 */
+.od-status-header {
+  padding: 24px 16px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.od-status-icon {
+  font-size: 28px;
+}
+
+.od-status-label {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.od-status-hint {
+  font-size: 13px;
+  opacity: 0.85;
+  margin-left: auto;
+}
+
+/* 通用卡片 */
+.od-card {
+  margin: 12px;
+  padding: 16px;
+  background: #fff;
+  border-radius: 12px;
+}
+
+.od-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 14px 0;
+}
+
+/* 酒店卡片 */
+.od-hotel-card {
+  display: flex;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.od-hotel-img {
+  width: 90px;
+  height: 90px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.od-hotel-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.od-hotel-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 6px 0;
+}
+
+.od-room-name {
+  font-size: 13px;
+  color: #666;
+  margin: 0 0 6px 0;
+}
+
+.od-hotel-addr {
+  font-size: 12px;
+  color: #999;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 日期行 */
+.od-date-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.od-date-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.od-date-label {
+  font-size: 12px;
+  color: #999;
+}
+
+.od-date-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.od-date-nights {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #999;
+  font-size: 13px;
+}
+
+.od-date-arrow {
+  font-size: 18px;
+  color: #ccc;
+}
+
+.od-contact-row {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #f5f5f5;
+  display: flex;
+  gap: 20px;
+  font-size: 13px;
+  color: #666;
+}
+
+/* 费用 */
+.od-fee-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #666;
+  padding: 6px 0;
+}
+
+.od-fee-total {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 12px;
+  margin-top: 8px;
+  border-top: 1px solid #f5f5f5;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.od-total-price {
+  color: #ff4d4f;
+  font-size: 18px;
+}
+
+/* 时间线 */
+.od-timeline {
+  position: relative;
+  padding-left: 4px;
+}
+
+.od-timeline-item {
+  position: relative;
+  padding-left: 24px;
+  padding-bottom: 20px;
+}
+
+.od-timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+.od-timeline-dot {
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ddd;
+  z-index: 1;
+}
+
+.od-timeline-line {
+  position: absolute;
+  left: 4px;
+  top: 16px;
+  bottom: 0;
+  width: 2px;
+  background: #eee;
+}
+
+.od-timeline-active .od-timeline-dot {
+  background: #1677ff;
+  box-shadow: 0 0 0 3px rgba(22, 119, 255, 0.15);
+}
+
+.od-timeline-done .od-timeline-dot {
+  background: #52c41a;
+}
+
+.od-timeline-done .od-timeline-line {
+  background: #52c41a;
+}
+
+.od-timeline-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.od-timeline-label {
+  font-size: 14px;
+  color: #333;
+}
+
+.od-timeline-inactive .od-timeline-label {
+  color: #ccc;
+}
+
+.od-timeline-time {
+  font-size: 12px;
+  color: #999;
+}
+
+/* 订单信息 */
+.od-info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+}
+
+.od-info-label {
+  font-size: 13px;
+  color: #999;
+}
+
+.od-info-value {
+  font-size: 13px;
+  color: #333;
+}
+
+/* 底部操作栏 */
+.od-bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  background: #fff;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  box-sizing: border-box;
+  z-index: 999;
+}
+
+.od-btn {
+  padding: 10px 20px;
+  border-radius: 24px;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.od-btn-cancel {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.od-btn-pay {
+  flex: 1;
+  background: linear-gradient(135deg, #ff6b35, #ff4d4f);
+  color: #fff;
+  font-weight: 600;
+  justify-content: center;
+}
+
+.od-btn-call {
+  background: #f0f7ff;
+  color: #1677ff;
+}
