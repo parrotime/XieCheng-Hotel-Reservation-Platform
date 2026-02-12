@@ -34,3 +34,23 @@ export function deleteHotel(id) {
 export function updateHotelStatus(id, data) {
   return request.patch(`/hotels/${id}/status`, data)
 }
+
+// 商户：订单列表
+export function getMerchantOrders(params) {
+  return request.get('/hotels/merchant/orders', { params })
+}
+
+// 商户：经营统计
+export function getMerchantStats() {
+  return request.get('/hotels/merchant/stats')
+}
+
+// 商户：查询日期库存
+export function getInventory(params) {
+  return request.get('/hotels/merchant/inventory', { params })
+}
+
+// 商户：更新日期库存
+export function updateInventory(data) {
+  return request.put('/hotels/merchant/inventory', data)
+}
