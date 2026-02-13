@@ -10,7 +10,7 @@ import './HotelCard.css'
  * @param {Object} hotel - 酒店数据对象（后端格式）
  * @param {Function} onClick - 点击回调，接收 hotel.id
  */
-export default function HotelCard({ hotel, onClick }) {
+function HotelCard({ hotel, onClick }) {
   // 兼容图片格式：后端返回 [{url,desc}] 或旧格式字符串数组
   const firstImage = Array.isArray(hotel.images) && hotel.images.length > 0
     ? (typeof hotel.images[0] === 'string' ? hotel.images[0] : hotel.images[0].url)
@@ -57,3 +57,5 @@ export default function HotelCard({ hotel, onClick }) {
     </Card>
   )
 }
+
+export default React.memo(HotelCard)

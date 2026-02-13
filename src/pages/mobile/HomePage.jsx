@@ -207,7 +207,7 @@ function HomePage() {
             {banners.map(banner => (
               <Swiper.Item key={banner.id}>
                 <div className="banner-item" onClick={() => navigate(`/detail/${banner.hotelId}`)}>
-                  <img src={banner.image} alt={banner.title} />
+                  <img src={banner.image} alt={banner.title} loading="lazy" />
                   <div className="banner-overlay">
                     <div className="banner-title">{banner.title}</div>
                     <div className="banner-subtitle">{banner.subtitle}</div>
@@ -237,7 +237,7 @@ function HomePage() {
               className="destination-card"
               onClick={() => handleDestination(dest.name)}
             >
-              <img src={dest.image} alt={dest.name} />
+              <img src={dest.image} alt={dest.name} loading="lazy" />
               <div className="dest-info">
                 <span className="dest-name">{dest.name}</span>
                 <span className="dest-tag">{dest.tag}</span>

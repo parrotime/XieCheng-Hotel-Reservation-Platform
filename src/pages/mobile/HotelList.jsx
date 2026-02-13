@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   SearchBar,
   Dropdown,
   Empty,
   NavBar,
-  InfiniteScroll,
   Skeleton,
   Tag,
 } from 'antd-mobile'
@@ -17,7 +16,8 @@ import DatePickerRow from '../../components/DatePickerRow'
 import HotelCard from '../../components/HotelCard'
 import './HotelList.css'
 
-const PAGE_SIZE = 20
+const ITEM_HEIGHT = 138  // 每个 HotelCard 的估算高度
+const OVERSCAN = 5       // 视口外额外渲染的缓冲条数
 
 function HotelList() {
   const navigate = useNavigate()
@@ -35,14 +35,36 @@ function HotelList() {
   const [sortType, setSortType] = useState('default')
   const [loading, setLoading] = useState(true)
 
-  // 分页
-  const [page, setPage] = useState(1)
-  const hasMore = page * PAGE_SIZE < filteredHotels.length
-  const displayedHotels = filteredHotels.slice(0, page * PAGE_SIZE)
+  // 虚拟滚动
+  const listRef = useRef(null)
+  const [scrollTop, setScrollTop] = useState(0)
+  const [viewHeight, setViewHeight] = useState(600)
 
-  const loadMore = async () => {
-    setPage(p => p + 1)
-  }
+  const { visibleItems, totalHeight, offsetTop } = useMemo(() => {
+    const total = filteredHotels.length
+    const totalH = total * ITEM_HEIGHT
+    const start = Math.max(0, Math.floor(scrollTop / ITEM_HEIGHT) - OVERSCAN)
+    const end = Math.min(total, Math.ceil((scrollTop + viewHeight) / ITEM_HEIGHT) + OVERSCAN)
+    return {
+      visibleItems: filteredHotels.slice(start, end),
+      totalHeight: totalH,
+      offsetTop: start * ITEM_HEIGHT,
+    }
+  }, [filteredHotels, scrollTop, viewHeight])
+
+  const handleListScroll = useCallback((e) => {
+    setScrollTop(e.target.scrollTop)
+  }, [])
+
+  // 监听容器尺寸
+  useEffect(() => {
+    const el = listRef.current
+    if (!el) return
+    setViewHeight(el.clientHeight)
+    const ro = new ResizeObserver(([entry]) => setViewHeight(entry.contentRect.height))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   // 从 API 加载酒店数据
   useEffect(() => {
@@ -76,7 +98,8 @@ function HotelList() {
   useEffect(() => {
     if (allHotels.length === 0 && loading) return
     filterData()
-    setPage(1) // 筛选变化时重置分页
+    setScrollTop(0) // 筛选变化时重置滚动位置
+    if (listRef.current) listRef.current.scrollTop = 0
   }, [allHotels, selectedCity, searchKey, selectedStar, priceRange, selectedFacilities, sortType])
 
   // 筛选数据（基于 API 返回的数据做客户端筛选）
@@ -276,8 +299,13 @@ function HotelList() {
         {selectedFacilities.length > 0 && ` · ${selectedFacilities.join('、')}`}
       </div>
 
-      {/* 酒店列表 */}
-      <div className="hotel-list">
+      {/* 酒店列表 — 虚拟滚动 */}
+      <div
+        className="hotel-list"
+        ref={listRef}
+        onScroll={handleListScroll}
+        style={{ flex: 1, overflow: 'auto' }}
+      >
         {loading ? (
           // 骨架屏
           Array.from({ length: 3 }).map((_, i) => (
@@ -289,22 +317,23 @@ function HotelList() {
               </div>
             </div>
           ))
-        ) : displayedHotels.length === 0 ? (
+        ) : filteredHotels.length === 0 ? (
           <Empty
             description="暂无符合条件的酒店"
             style={{ marginTop: '60px' }}
           />
         ) : (
-          <>
-            {displayedHotels.map(hotel => (
-              <HotelCard
-                key={hotel.id}
-                hotel={hotel}
-                onClick={handleHotelClick}
-              />
-            ))}
-            <InfiniteScroll loadMore={loadMore} hasMore={hasMore} />
-          </>
+          <div style={{ height: totalHeight, position: 'relative' }}>
+            <div style={{ position: 'absolute', top: offsetTop, left: 0, right: 0 }}>
+              {visibleItems.map(hotel => (
+                <HotelCard
+                  key={hotel.id}
+                  hotel={hotel}
+                  onClick={handleHotelClick}
+                />
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </div>

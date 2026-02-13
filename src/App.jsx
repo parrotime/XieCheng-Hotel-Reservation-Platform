@@ -2,40 +2,47 @@ import React, { Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import './App.css'
 
-// 全局组件
+// 全局组件（首屏必需，同步加载）
 import LoginExpiredModal from './components/LoginExpiredModal'
 import { DateRangeProvider } from './hooks/useDateRange.jsx'
-
-// 移动端布局
 import MobileLayout from './components/MobileLayout'
+import ErrorBoundary from './components/ErrorBoundary'
 
-// 移动端页面
-import HomePage from './pages/mobile/HomePage'
-import HotelList from './pages/mobile/HotelList'
-import HotelDetail from './pages/mobile/HotelDetail'
-import CitySelect from './pages/mobile/CitySelect'
-import OrdersPage from './pages/mobile/OrdersPage'
-import ProfilePage from './pages/mobile/ProfilePage'
-import PayPage from './pages/mobile/PayPage'
-import PaySuccess from './pages/mobile/PaySuccess'
-import OrderDetail from './pages/mobile/OrderDetail'
+// 路由级懒加载 — 按需加载，减小首屏 bundle
+const HomePage = React.lazy(() => import('./pages/mobile/HomePage'))
+const HotelList = React.lazy(() => import('./pages/mobile/HotelList'))
+const HotelDetail = React.lazy(() => import('./pages/mobile/HotelDetail'))
+const CitySelect = React.lazy(() => import('./pages/mobile/CitySelect'))
+const OrdersPage = React.lazy(() => import('./pages/mobile/OrdersPage'))
+const ProfilePage = React.lazy(() => import('./pages/mobile/ProfilePage'))
+const PayPage = React.lazy(() => import('./pages/mobile/PayPage'))
+const PaySuccess = React.lazy(() => import('./pages/mobile/PaySuccess'))
+const OrderDetail = React.lazy(() => import('./pages/mobile/OrderDetail'))
 
-// PC端页面
-import Login from './pages/pc/Login'
-import HotelManage from './pages/pc/HotelManage'
-import HotelAudit from './pages/pc/HotelAudit'
+const Login = React.lazy(() => import('./pages/pc/Login'))
+const HotelManage = React.lazy(() => import('./pages/pc/HotelManage'))
+const HotelAudit = React.lazy(() => import('./pages/pc/HotelAudit'))
 
 // 开发者页面（仅开发环境）
 const DevDashboard = import.meta.env.DEV
   ? React.lazy(() => import('./pages/pc/DevDashboard'))
   : null
 
+// 路由加载占位
+const PageLoading = () => (
+  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh', color: '#999' }}>
+    加载中...
+  </div>
+)
+
 function App() {
   return (
     <BrowserRouter>
       <DateRangeProvider>
       <LoginExpiredModal />
+      <ErrorBoundary>
       <div className="App">
+        <Suspense fallback={<PageLoading />}>
         {/* 路由配置 */}
         <Routes>
             {/* 移动端路由 - 带底部 TabBar */}
@@ -60,17 +67,15 @@ function App() {
 
             {/* 开发者路由（仅开发环境） */}
             {DevDashboard && (
-              <Route path="/dev" element={
-                <Suspense fallback={<div style={{ padding: 48, textAlign: 'center' }}>加载中...</div>}>
-                  <DevDashboard />
-                </Suspense>
-              } />
+              <Route path="/dev" element={<DevDashboard />} />
             )}
 
             {/* 404 重定向到首页 */}
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </Suspense>
       </div>
+      </ErrorBoundary>
       </DateRangeProvider>
     </BrowserRouter>
   )

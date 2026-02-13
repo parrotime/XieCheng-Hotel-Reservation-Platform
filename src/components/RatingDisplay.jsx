@@ -8,7 +8,7 @@ import './RatingDisplay.css'
  * @param {string} [ratingText] - 评分文字描述，默认 "很棒"
  * @param {string} [className] - 额外 CSS 类名（用于不同尺寸）
  */
-export default function RatingDisplay({ rating, reviewCount, ratingText = '很棒', className = '' }) {
+function RatingDisplay({ rating, reviewCount, ratingText = '很棒', className = '' }) {
   return (
     <div className={`rating-display ${className}`}>
       <span className="rating-score">{rating}</span>
@@ -17,3 +17,5 @@ export default function RatingDisplay({ rating, reviewCount, ratingText = '很�
     </div>
   )
 }
+
+export default React.memo(RatingDisplay)

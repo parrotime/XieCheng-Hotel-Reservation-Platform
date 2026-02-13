@@ -15,5 +15,16 @@ export default defineConfig({
         changeOrigin: true,
       }
     }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-mobile': ['antd-mobile'],
+        }
+      }
+    },
+    chunkSizeWarningLimit: 500,
   }
 })

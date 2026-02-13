@@ -8,7 +8,7 @@ import './PriceDisplay.css'
  * @param {number} [originalPrice] - 原价（可选，显示划线价）
  * @param {string} [className] - 额外 CSS 类名
  */
-export default function PriceDisplay({ price, unit = '起', originalPrice, className = '' }) {
+function PriceDisplay({ price, unit = '起', originalPrice, className = '' }) {
   return (
     <div className={`price-display ${className}`}>
       {originalPrice && originalPrice > price && (
@@ -22,3 +22,5 @@ export default function PriceDisplay({ price, unit = '起', originalPrice, class
     </div>
   )
 }
+
+export default React.memo(PriceDisplay)

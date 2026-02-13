@@ -7,10 +7,12 @@ import './StarRating.css'
  * @param {number} star - 星级数
  * @param {string} [className] - 额外 CSS 类名
  */
-export default function StarRating({ star, className = '' }) {
+function StarRating({ star, className = '' }) {
   return (
     <span className={`star-rating ${className}`}>
       {renderStarText(star)}
     </span>
   )
 }
+
+export default React.memo(StarRating)

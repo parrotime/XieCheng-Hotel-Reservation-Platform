@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react'
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   NavBar,
@@ -45,18 +45,40 @@ function HotelDetail() {
   const [roomCount, setRoomCount] = useState(1)
 
   // 加载酒店数据
-  useEffect(() => {
-    const fetchHotel = async () => {
-      try {
-        const data = await getHotelById(id)
-        setHotel(data)
-      } catch (err) {
+  const fetchHotel = useCallback(async (silent = false) => {
+    try {
+      const data = await getHotelById(id)
+      setHotel(prev => {
+        // 静默刷新时检测价格变化
+        if (silent && prev?.rooms && data?.rooms) {
+          const changed = data.rooms.some(r => {
+            const old = prev.rooms.find(o => o.id === r.id)
+            return old && (old.default_price !== r.default_price || old.stock !== r.stock)
+          })
+          if (changed) {
+            Toast.show({ content: '房型价格/库存已更新', duration: 1500 })
+          }
+        }
+        return data
+      })
+    } catch (err) {
+      if (!silent) {
         Toast.show({ icon: 'fail', content: '酒店不存在' })
         setTimeout(() => navigate('/list'), 1500)
       }
     }
-    fetchHotel()
   }, [id, navigate])
+
+  // 首次加载
+  useEffect(() => {
+    fetchHotel(false)
+  }, [fetchHotel])
+
+  // 实时轮询价格和库存（每 30 秒）
+  useEffect(() => {
+    const timer = setInterval(() => fetchHotel(true), 30000)
+    return () => clearInterval(timer)
+  }, [fetchHotel])
 
   // 返回列表
   const handleBack = () => {
@@ -310,7 +332,7 @@ function HotelDetail() {
                   setImageViewerVisible(true)
                 }}
               >
-                <img src={typeof img === 'string' ? img : img.url} alt={`${hotel.name}-${index + 1}`} />
+                <img src={typeof img === 'string' ? img : img.url} alt={`${hotel.name}-${index + 1}`} loading="lazy" />
               </div>
             </Swiper.Item>
           ))}
@@ -394,7 +416,7 @@ function HotelDetail() {
       {/* 房型列表 */}
       <div className="section-card rooms-section" ref={roomsRef}>
         <h3 className="section-title">选择房型</h3>
-        {(hotel.rooms || []).map((room) => (
+        {[...(hotel.rooms || [])].sort((a, b) => a.default_price - b.default_price).map((room) => (
           <div key={room.id} className="room-card">
             <div className="room-info">
               <h4 className="room-type">{room.name}</h4>
