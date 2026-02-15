@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { NavBar, Tabs, Empty, Toast, PullToRefresh, InfiniteScroll } from 'antd-mobile'
+import { useUser } from '../../hooks/useUser'
+import { usePagination } from '../../hooks/usePagination'
 import { getOrders, cancelOrder } from '../../api/orders'
 import './OrdersPage.css'
 
@@ -19,68 +21,33 @@ const TABS = [
   { key: 'completed', title: '已完成' },
 ]
 
-const PAGE_SIZE = 10
-
 function OrdersPage() {
   const navigate = useNavigate()
+  const { isLoggedIn } = useUser()
   const [activeTab, setActiveTab] = useState('all')
-  const [orders, setOrders] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [hasMore, setHasMore] = useState(true)
-  const pageRef = useRef(1)
 
-  const fetchFirstPage = useCallback(async (status) => {
-    const token = localStorage.getItem('token')
-    if (!token) return
+  const extraParams = useMemo(
+    () => ({ status: activeTab === 'all' ? undefined : activeTab }),
+    [activeTab]
+  )
 
-    setLoading(true)
-    pageRef.current = 1
-    try {
-      const data = await getOrders({ status: status === 'all' ? undefined : status, page: 1, limit: PAGE_SIZE })
-      const list = data.orders || []
-      setOrders(list)
-      setHasMore(list.length >= PAGE_SIZE && list.length < data.total)
-    } catch {
-      setOrders([])
-      setHasMore(false)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+  const fetchFn = useCallback((params) => getOrders(params), [])
 
-  const loadMore = async () => {
-    const token = localStorage.getItem('token')
-    if (!token) return
+  const { list: orders, loading, hasMore, loadMore, refresh } = usePagination(fetchFn, {
+    pageSize: 10,
+    extraParams,
+  })
 
-    const nextPage = pageRef.current + 1
-    try {
-      const data = await getOrders({
-        status: activeTab === 'all' ? undefined : activeTab,
-        page: nextPage,
-        limit: PAGE_SIZE,
-      })
-      const list = data.orders || []
-      setOrders(prev => [...prev, ...list])
-      pageRef.current = nextPage
-      setHasMore(list.length >= PAGE_SIZE)
-    } catch {
-      setHasMore(false)
-    }
-  }
-
+  // 切换 tab 或首次加载时刷新
   useEffect(() => {
-    fetchFirstPage(activeTab)
-  }, [activeTab, fetchFirstPage])
-
-  const handleRefresh = async () => {
-    await fetchFirstPage(activeTab)
-  }
+    if (isLoggedIn) refresh()
+  }, [activeTab, isLoggedIn, refresh])
 
   const handleCancel = async (orderId) => {
     try {
       await cancelOrder(orderId)
       Toast.show({ content: '订单已取消' })
-      fetchFirstPage(activeTab)
+      refresh()
     } catch (err) {
       Toast.show({ icon: 'fail', content: err.message || '取消失败' })
     }
@@ -89,8 +56,6 @@ function OrdersPage() {
   const handlePay = (orderId) => {
     navigate(`/pay/${orderId}`)
   }
-
-  const isLoggedIn = !!localStorage.getItem('token')
 
   return (
     <div className="orders-page">
@@ -111,7 +76,7 @@ function OrdersPage() {
             ))}
           </Tabs>
 
-          <PullToRefresh onRefresh={handleRefresh}>
+          <PullToRefresh onRefresh={refresh}>
             <div className="orders-list">
               {loading && orders.length === 0 ? (
                 <div className="orders-loading">加载中...</div>

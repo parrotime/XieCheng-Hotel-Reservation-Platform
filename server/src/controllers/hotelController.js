@@ -1,5 +1,6 @@
 const pool = require('../config/db')
 const { AppError } = require('../middleware/errorHandler')
+const { success } = require('../utils/response')
 
 // GET /api/hotels — 酒店列表（支持筛选、分页）
 async function getHotels(req, res) {
@@ -62,7 +63,7 @@ async function getHotels(req, res) {
     pool.query(`SELECT COUNT(*) FROM hotels h ${where}`, params.slice(0, params.length - 2))
   ])
 
-  res.json({
+  success(res, {
     hotels: hotelsResult.rows,
     total: Number(countResult.rows[0].count),
     page: Number(page),
@@ -81,7 +82,7 @@ async function getHotelById(req, res) {
     [id]
   )
   if (hotelResult.rows.length === 0) {
-    return res.status(404).json({ error: '酒店不存在' })
+    throw new AppError('酒店不存在', 404)
   }
 
   const roomsResult = await pool.query(
@@ -96,19 +97,20 @@ async function getHotelById(req, res) {
     [id]
   )
 
-  res.json({
+  success(res, {
     ...hotelResult.rows[0],
     rooms: roomsResult.rows,
     reviews: reviewsResult.rows
   })
 }
 
-// POST /api/hotels — 商户创建酒店（保存全部字段）
+// POST /api/hotels — 商户创建酒店
 async function createHotel(req, res) {
   const {
     name, name_en, star_rating, address, city, province,
     description, facilities, images, phone,
     district, subway, nearby_attractions, open_date, tags,
+    latitude, longitude,
     rooms = []
   } = req.body
 
@@ -123,8 +125,8 @@ async function createHotel(req, res) {
     const hotelResult = await client.query(
       `INSERT INTO hotels (name, name_en, star_rating, address, city, province,
         description, facilities, images, phone, district, subway,
-        nearby_attractions, open_date, tags, status, created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,'pending',$16)
+        nearby_attractions, open_date, tags, latitude, longitude, status, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,'pending',$18)
        RETURNING *`,
       [name, name_en, star_rating, address, city || null, province || null,
        description || null,
@@ -134,11 +136,11 @@ async function createHotel(req, res) {
        nearby_attractions ? JSON.stringify(nearby_attractions) : null,
        open_date || null,
        tags ? JSON.stringify(tags) : null,
+       latitude || null, longitude || null,
        req.user.id]
     )
     const hotel = hotelResult.rows[0]
 
-    // 批量插入房型
     for (const room of rooms) {
       await client.query(
         `INSERT INTO room_types (hotel_id, name, bed_type, max_guests, area_sqm, default_price, stock, facilities)
@@ -153,7 +155,7 @@ async function createHotel(req, res) {
     }
 
     await client.query('COMMIT')
-    res.status(201).json(hotel)
+    success(res, hotel, '酒店创建成功', 201)
   } catch (err) {
     await client.query('ROLLBACK')
     throw err
@@ -162,17 +164,17 @@ async function createHotel(req, res) {
   }
 }
 
-// PUT /api/hotels/:id — 商户编辑酒店（含房型同步）
+// PUT /api/hotels/:id — 商户编辑酒店
 async function updateHotel(req, res) {
   const { id } = req.params
   const {
     name, name_en, star_rating, address, city, province,
     description, facilities, images, phone,
     district, subway, nearby_attractions, open_date, tags,
+    latitude, longitude,
     rooms
   } = req.body
 
-  // 验证所有权
   const check = await pool.query(
     'SELECT id, created_by, status FROM hotels WHERE id = $1',
     [id]
@@ -205,8 +207,10 @@ async function updateHotel(req, res) {
          nearby_attractions = COALESCE($13, nearby_attractions),
          open_date = COALESCE($14, open_date),
          tags = COALESCE($15, tags),
+         latitude = COALESCE($16, latitude),
+         longitude = COALESCE($17, longitude),
          updated_at = NOW()
-       WHERE id = $16
+       WHERE id = $18
        RETURNING *`,
       [name, name_en, star_rating, address, city, province,
        description,
@@ -216,10 +220,10 @@ async function updateHotel(req, res) {
        nearby_attractions ? JSON.stringify(nearby_attractions) : null,
        open_date || null,
        tags ? JSON.stringify(tags) : null,
+       latitude || null, longitude || null,
        id]
     )
 
-    // 同步房型：删除旧的，插入新的
     if (rooms && Array.isArray(rooms)) {
       await client.query('DELETE FROM room_types WHERE hotel_id = $1', [id])
       for (const room of rooms) {
@@ -237,7 +241,7 @@ async function updateHotel(req, res) {
     }
 
     await client.query('COMMIT')
-    res.json(result.rows[0])
+    success(res, result.rows[0])
   } catch (err) {
     await client.query('ROLLBACK')
     throw err
@@ -246,7 +250,7 @@ async function updateHotel(req, res) {
   }
 }
 
-// PATCH /api/hotels/:id/status — 管理员审核（保存拒绝原因）
+// PATCH /api/hotels/:id/status — 管理员审核
 async function updateHotelStatus(req, res) {
   const { id } = req.params
   const { status, reject_reason } = req.body
@@ -268,10 +272,10 @@ async function updateHotelStatus(req, res) {
     throw new AppError('酒店不存在', 404)
   }
 
-  res.json(result.rows[0])
+  success(res, result.rows[0])
 }
 
-// GET /api/hotels/merchant/my — 商户获取自己的酒店（含房型）
+// GET /api/hotels/merchant/my
 async function getMyHotels(req, res) {
   const hotelsResult = await pool.query(
     `SELECT h.*,
@@ -281,7 +285,6 @@ async function getMyHotels(req, res) {
     [req.user.id]
   )
 
-  // 附带每个酒店的房型列表
   const hotels = []
   for (const hotel of hotelsResult.rows) {
     const roomsResult = await pool.query(
@@ -291,10 +294,10 @@ async function getMyHotels(req, res) {
     hotels.push({ ...hotel, rooms: roomsResult.rows })
   }
 
-  res.json(hotels)
+  success(res, hotels)
 }
 
-// DELETE /api/hotels/:id — 商户删除酒店
+// DELETE /api/hotels/:id
 async function deleteHotel(req, res) {
   const { id } = req.params
 
@@ -309,10 +312,10 @@ async function deleteHotel(req, res) {
   }
 
   await pool.query('DELETE FROM hotels WHERE id = $1', [id])
-  res.json({ message: '删除成功' })
+  success(res, null, '删除成功')
 }
 
-// GET /api/hotels/merchant/orders — 商户查看自己酒店的订单
+// GET /api/hotels/merchant/orders
 async function getMerchantOrders(req, res) {
   const { status, hotel_id, page = 1, limit = 20 } = req.query
   const conditions = ['h.created_by = $1']
@@ -350,7 +353,7 @@ async function getMerchantOrders(req, res) {
     pool.query(`SELECT COUNT(*) FROM orders o JOIN hotels h ON o.hotel_id = h.id ${where}`, countParams)
   ])
 
-  res.json({
+  success(res, {
     orders: ordersResult.rows,
     total: Number(countResult.rows[0].count),
     page: Number(page),
@@ -358,11 +361,10 @@ async function getMerchantOrders(req, res) {
   })
 }
 
-// GET /api/hotels/merchant/stats — 商户经营统计
+// GET /api/hotels/merchant/stats
 async function getMerchantStats(req, res) {
   const userId = req.user.id
 
-  // 并行查询所有统计数据
   const [
     hotelCount,
     orderStats,
@@ -370,9 +372,7 @@ async function getMerchantStats(req, res) {
     recentOrders,
     roomCount
   ] = await Promise.all([
-    // 酒店总数
     pool.query('SELECT COUNT(*) FROM hotels WHERE created_by = $1', [userId]),
-    // 订单状态统计
     pool.query(
       `SELECT o.status, COUNT(*) AS count
        FROM orders o JOIN hotels h ON o.hotel_id = h.id
@@ -380,14 +380,12 @@ async function getMerchantStats(req, res) {
        GROUP BY o.status`,
       [userId]
     ),
-    // 总收入（已支付 + 已完成）
     pool.query(
       `SELECT COALESCE(SUM(o.total_price), 0) AS total_revenue
        FROM orders o JOIN hotels h ON o.hotel_id = h.id
        WHERE h.created_by = $1 AND o.status IN ('paid', 'completed')`,
       [userId]
     ),
-    // 最近7天每天的订单数
     pool.query(
       `SELECT DATE(o.created_at) AS date, COUNT(*) AS count
        FROM orders o JOIN hotels h ON o.hotel_id = h.id
@@ -396,7 +394,6 @@ async function getMerchantStats(req, res) {
        ORDER BY date`,
       [userId]
     ),
-    // 房型总数
     pool.query(
       `SELECT COUNT(*) FROM room_types rt
        JOIN hotels h ON rt.hotel_id = h.id
@@ -410,7 +407,7 @@ async function getMerchantStats(req, res) {
     statusCounts[row.status] = Number(row.count)
   }
 
-  res.json({
+  success(res, {
     hotel_count: Number(hotelCount.rows[0].count),
     room_count: Number(roomCount.rows[0].count),
     total_orders: Object.values(statusCounts).reduce((a, b) => a + b, 0),
@@ -420,16 +417,14 @@ async function getMerchantStats(req, res) {
   })
 }
 
-// PUT /api/hotels/merchant/inventory — 商户设置日期库存
+// PUT /api/hotels/merchant/inventory
 async function updateInventory(req, res) {
   const { room_type_id, dates } = req.body
-  // dates: [{ date: '2026-02-15', available: 5 }, ...]
 
   if (!room_type_id || !dates || !Array.isArray(dates)) {
     throw new AppError('参数不完整', 400)
   }
 
-  // 验证房型归属
   const check = await pool.query(
     `SELECT rt.id, rt.stock FROM room_types rt
      JOIN hotels h ON rt.hotel_id = h.id
@@ -453,7 +448,7 @@ async function updateInventory(req, res) {
       )
     }
     await client.query('COMMIT')
-    res.json({ message: '库存更新成功' })
+    success(res, null, '库存更新成功')
   } catch (err) {
     await client.query('ROLLBACK')
     throw err
@@ -462,13 +457,12 @@ async function updateInventory(req, res) {
   }
 }
 
-// GET /api/hotels/merchant/inventory — 查询日期库存
+// GET /api/hotels/merchant/inventory
 async function getInventory(req, res) {
   const { room_type_id, start_date, end_date } = req.query
 
   if (!room_type_id) throw new AppError('缺少 room_type_id', 400)
 
-  // 验证归属
   const check = await pool.query(
     `SELECT rt.id, rt.stock AS default_stock FROM room_types rt
      JOIN hotels h ON rt.hotel_id = h.id
@@ -488,7 +482,7 @@ async function getInventory(req, res) {
     [room_type_id, start_date || new Date().toISOString().slice(0, 10), end_date || '2099-12-31']
   )
 
-  res.json({
+  success(res, {
     default_stock: defaultStock,
     inventory: result.rows
   })

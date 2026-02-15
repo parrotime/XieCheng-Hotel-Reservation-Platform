@@ -20,16 +20,19 @@ import {
 } from 'antd-mobile-icons'
 import { getHotelById } from '../../api/hotels'
 import { createOrder } from '../../api/orders'
+import { useUser } from '../../hooks/useUser'
 import { useDateRange } from '../../hooks/useDateRange.jsx'
 import { formatDate } from '../../utils/dateUtils'
 import StarRating from '../../components/StarRating'
 import RatingDisplay from '../../components/RatingDisplay'
 import DatePickerRow from '../../components/DatePickerRow'
+import { MapDisplay } from '../../components/AMapComponents'
 import './HotelDetail.css'
 
 function HotelDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { isLoggedIn } = useUser()
   const dateRange = useDateRange()
 
   // 状态管理
@@ -92,11 +95,6 @@ function HotelDetail() {
     }
   }
 
-  // 地图导航
-  const handleMap = () => {
-    Toast.show({ content: '打开地图功能（实际项目中调用地图API）' })
-  }
-
   // 预订房间
   const handleBookRoom = (room) => {
     if (!dateRange.checkInDate || !dateRange.checkOutDate) {
@@ -138,8 +136,7 @@ function HotelDetail() {
   // 确认预订 — 调用真实 API
   const [booking, setBooking] = useState(false)
   const handleConfirmBook = async () => {
-    const token = localStorage.getItem('token')
-    if (!token) {
+    if (!isLoggedIn) {
       setConfirmVisible(false)
       Toast.show({ content: '请先登录' })
       navigate('/login')
@@ -392,13 +389,22 @@ function HotelDetail() {
             <p className="location-district">{hotel.city || ''} {hotel.province || ''}</p>
           </div>
         </div>
+        {hotel.latitude && hotel.longitude && (
+          <div style={{ margin: '10px 0' }}>
+            <MapDisplay latitude={Number(hotel.latitude)} longitude={Number(hotel.longitude)} name={hotel.name} />
+          </div>
+        )}
         <div className="location-actions">
-          <button className="action-chip" onClick={handleMap}>
-            <EnvironmentOutline /> 查看地图
-          </button>
           <button className="action-chip" onClick={handleCall}>
             <PhoneFill /> 联系酒店
           </button>
+          {hotel.latitude && hotel.longitude && (
+            <button className="action-chip" onClick={() => {
+              window.open(`https://uri.amap.com/marker?position=${hotel.longitude},${hotel.latitude}&name=${encodeURIComponent(hotel.name)}`, '_blank')
+            }}>
+              <EnvironmentOutline /> 导航前往
+            </button>
+          )}
         </div>
       </div>
 

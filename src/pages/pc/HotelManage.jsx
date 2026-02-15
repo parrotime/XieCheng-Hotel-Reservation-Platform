@@ -9,6 +9,7 @@ import {
 } from '../../api/hotels'
 import StarRating from '../../components/StarRating'
 import StatusTag from '../../components/StatusTag'
+import { MapPicker } from '../../components/AMapComponents'
 import './HotelManage.css'
 
 // ========== 经营概览 Tab ==========
@@ -282,6 +283,7 @@ function HotelManage() {
   const emptyForm = {
     name: '', name_en: '', star_rating: 4, address: '', city: '', province: '',
     description: '', phone: '', district: '', subway: '',
+    latitude: null, longitude: null,
     images: [''], tags: [], rooms: []
   }
   const [formData, _setFormData] = useState(emptyForm)
@@ -341,6 +343,8 @@ function HotelManage() {
       province: hotel.province || '', description: hotel.description || '',
       phone: hotel.phone || '', district: hotel.district || '',
       subway: hotel.subway || '',
+      latitude: hotel.latitude ? Number(hotel.latitude) : null,
+      longitude: hotel.longitude ? Number(hotel.longitude) : null,
       images: imgs.length > 0 ? imgs : [''],
       tags: tgs,
       rooms: (hotel.rooms || []).map(r => ({
@@ -385,6 +389,8 @@ function HotelManage() {
       const payload = {
         ...formData,
         images: formData.images.filter(u => u.trim()),
+        latitude: formData.latitude || null,
+        longitude: formData.longitude || null,
         rooms: formData.rooms.map(r => ({
           name: r.name, bed_type: r.bed_type, max_guests: Number(r.max_guests) || 2,
           area_sqm: Number(r.area_sqm) || null, default_price: Number(r.default_price),
@@ -681,6 +687,16 @@ function HotelManage() {
                 <label className="form-full">描述
                   <textarea rows={3} value={formData.description} onChange={e => setFormData(f => ({ ...f, description: e.target.value }))} />
                 </label>
+              </fieldset>
+
+              {/* 地图选点 */}
+              <fieldset className="form-section">
+                <legend>地图定位</legend>
+                <MapPicker
+                  value={formData.latitude ? { latitude: formData.latitude, longitude: formData.longitude } : null}
+                  onChange={({ latitude, longitude }) => setFormData(f => ({ ...f, latitude, longitude }))}
+                  address={formData.address}
+                />
               </fieldset>
 
               {/* 标签管理 */}

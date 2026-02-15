@@ -7,6 +7,7 @@ import LoginExpiredModal from './components/LoginExpiredModal'
 import { DateRangeProvider } from './hooks/useDateRange.jsx'
 import MobileLayout from './components/MobileLayout'
 import ErrorBoundary from './components/ErrorBoundary'
+import { useSocket } from './hooks/useSocket'
 
 // 路由级懒加载 — 按需加载，减小首屏 bundle
 const HomePage = React.lazy(() => import('./pages/mobile/HomePage'))
@@ -36,6 +37,9 @@ const PageLoading = () => (
 )
 
 function App() {
+  // WebSocket 实时通知：登录后自动连接，监听订单状态推送
+  useSocket()
+
   return (
     <BrowserRouter>
       <DateRangeProvider>

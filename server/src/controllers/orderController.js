@@ -1,5 +1,7 @@
 const pool = require('../config/db')
 const { AppError } = require('../middleware/errorHandler')
+const { success } = require('../utils/response')
+const { notifyUser } = require('../websocket')
 
 // 生成订单号
 function generateOrderNo() {
@@ -94,11 +96,18 @@ async function createOrder(req, res) {
 
     await client.query('COMMIT')
 
-    res.status(201).json({
-      ...orderResult.rows[0],
-      room_name: room.name,
-      unit_price: room.default_price
-    })
+    const order = orderResult.rows[0]
+
+    // WebSocket: 通知商户有新订单
+    const hotelOwner = await pool.query('SELECT created_by FROM hotels WHERE id = $1', [hotel_id])
+    if (hotelOwner.rows.length > 0) {
+      notifyUser(hotelOwner.rows[0].created_by, 'order:new', {
+        order_id: order.id, order_no: order.order_no,
+        room_name: room.name, total_price: totalPrice,
+      })
+    }
+
+    success(res, { ...order, room_name: room.name, unit_price: room.default_price }, '订单创建成功', 201)
   } catch (err) {
     await client.query('ROLLBACK')
     throw err
@@ -140,7 +149,7 @@ async function getOrders(req, res) {
     pool.query(`SELECT COUNT(*) FROM orders o ${where}`, countParams)
   ])
 
-  res.json({
+  success(res, {
     orders: ordersResult.rows,
     total: Number(countResult.rows[0].count),
     page: Number(page),
@@ -164,7 +173,7 @@ async function getOrderById(req, res) {
   if (result.rows.length === 0) {
     throw new AppError('订单不存在', 404)
   }
-  res.json(result.rows[0])
+  success(res, result.rows[0])
 }
 
 // PUT /api/orders/:id/pay — 模拟支付
@@ -179,7 +188,22 @@ async function payOrder(req, res) {
   if (result.rows.length === 0) {
     throw new AppError('订单不存在或状态不允许支付', 400)
   }
-  res.json(result.rows[0])
+
+  const order = result.rows[0]
+
+  // WebSocket: 通知商户订单已支付
+  const hotelOwner = await pool.query('SELECT created_by FROM hotels WHERE id = $1', [order.hotel_id])
+  if (hotelOwner.rows.length > 0) {
+    notifyUser(hotelOwner.rows[0].created_by, 'order:paid', {
+      order_id: order.id, order_no: order.order_no, total_price: order.total_price,
+    })
+  }
+  // 通知下单用户支付成功
+  notifyUser(order.user_id, 'order:update', {
+    order_id: order.id, order_no: order.order_no, status: 'paid', message: '支付成功',
+  })
+
+  success(res, order)
 }
 
 // PUT /api/orders/:id/cancel — 取消订单（按日期恢复库存）
@@ -221,7 +245,18 @@ async function cancelOrder(req, res) {
     )
 
     await client.query('COMMIT')
-    res.json(updated.rows[0])
+
+    const cancelled = updated.rows[0]
+
+    // WebSocket: 通知商户订单已取消
+    const hotelOwner = await pool.query('SELECT created_by FROM hotels WHERE id = $1', [cancelled.hotel_id])
+    if (hotelOwner.rows.length > 0) {
+      notifyUser(hotelOwner.rows[0].created_by, 'order:cancelled', {
+        order_id: cancelled.id, order_no: cancelled.order_no,
+      })
+    }
+
+    success(res, cancelled)
   } catch (err) {
     await client.query('ROLLBACK')
     throw err

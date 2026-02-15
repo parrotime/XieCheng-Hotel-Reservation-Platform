@@ -22,3 +22,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment
+server/.env
+
+# npm cache (Windows)
+%TEMP%/
+
+# Windows reserved names
+nul
+
+# Claude
+.claude/

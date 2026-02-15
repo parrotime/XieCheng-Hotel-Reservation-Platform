@@ -14,9 +14,9 @@ request.interceptors.request.use((config) => {
   return config
 })
 
-// 响应拦截器：统一错误处理
+// 响应拦截器：解包统一格式 { code, data, message }
 request.interceptors.response.use(
-  (response) => response.data,
+  (response) => response.data?.data ?? response.data,
   (error) => {
     const { status, data } = error.response || {}
 
@@ -30,7 +30,7 @@ request.interceptors.response.use(
       }
     }
 
-    const message = data?.error || error.message || '请求失败'
+    const message = data?.message || error.message || '请求失败'
     return Promise.reject(new Error(message))
   }
 )

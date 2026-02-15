@@ -1,11 +1,12 @@
 const jwt = require('jsonwebtoken')
 const pool = require('../config/db')
+const { success, fail } = require('../utils/response')
 
-// POST /api/dev/impersonate — 开发者模拟任意用户身份
+// POST /api/dev/impersonate
 async function impersonate(req, res) {
   const { username } = req.body
   if (!username) {
-    return res.status(400).json({ error: '请指定要模拟的用户名' })
+    return fail(res, '请指定要模拟的用户名', 400)
   }
 
   const result = await pool.query(
@@ -13,7 +14,7 @@ async function impersonate(req, res) {
     [username]
   )
   if (result.rows.length === 0) {
-    return res.status(404).json({ error: '用户不存在' })
+    return fail(res, '用户不存在', 404)
   }
 
   const user = result.rows[0]
@@ -23,10 +24,10 @@ async function impersonate(req, res) {
     { expiresIn: process.env.JWT_EXPIRES_IN }
   )
 
-  res.json({ token, user })
+  success(res, { token, user })
 }
 
-// GET /api/dev/stats — 数据库状态概览
+// GET /api/dev/stats
 async function getStats(req, res) {
   const [hotels, users, orders, rooms, reviews] = await Promise.all([
     pool.query(`
@@ -51,7 +52,7 @@ async function getStats(req, res) {
     pool.query(`SELECT count(*)::int AS total FROM reviews`),
   ])
 
-  res.json({
+  success(res, {
     hotels: hotels.rows[0],
     users: users.rows[0],
     orders: orders.rows[0].total > 0 ? orders.rows[0] : { total: 0, by_status: {} },

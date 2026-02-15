@@ -1,26 +1,19 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Layout, Card, Button, message, Tag, Spin } from 'antd'
-import {
-  MobileOutlined,
-  DesktopOutlined,
-  UserSwitchOutlined,
-  DatabaseOutlined,
-  ReloadOutlined,
-
-} from '@ant-design/icons'
 import { getDevStats, impersonate } from '../../api/dev'
-import PageHeader from '../../components/PageHeader'
+import { getAdminUsers, getAdminOrders, getAdminReviews } from '../../api/admin'
 import './DevDashboard.css'
 
-const { Content } = Layout
+const orderStatusMap = {
+  pending: '待支付', paid: '已支付', checked_in: '已入住',
+  completed: '已完成', cancelled: '已取消',
+}
 
-// 预设测试账号
 const TEST_ACCOUNTS = [
-  { username: 'dev', role: 'developer', label: '开发者', color: 'purple' },
-  { username: 'admin', role: 'system_admin', label: '管理员', color: 'red' },
-  { username: 'merchant', role: 'hotel_admin', label: '商户', color: 'blue' },
-  { username: 'guest', role: 'guest', label: '旅客', color: 'green' },
+  { username: 'dev',      role: 'developer',    label: '开发者', color: '#13c2c2' },
+  { username: 'admin',    role: 'system_admin',  label: '管理员', color: '#eb2f96' },
+  { username: 'merchant', role: 'hotel_admin',   label: '商户',   color: '#722ed1' },
+  { username: 'guest',    role: 'guest',         label: '旅客',   color: '#52c41a' },
 ]
 
 export default function DevDashboard() {
@@ -30,61 +23,58 @@ export default function DevDashboard() {
   const [loading, setLoading] = useState(false)
   const [switching, setSwitching] = useState(false)
 
-  // 进入页面时：尝试恢复 dev 凭证
+  // 详情弹窗
+  const [detailType, setDetailType] = useState(null)
+  const [detailData, setDetailData] = useState([])
+  const [detailLoading, setDetailLoading] = useState(false)
+
+  // 鉴权：恢复 dev 凭证
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem('userInfo') || 'null')
     const token = localStorage.getItem('token')
 
     if (token && user?.role === 'developer') {
-      // 当前就是 dev 身份，直接用
       setUserInfo(user)
       return
     }
-
-    // 当前不是 dev，尝试从备份恢复
     const devToken = localStorage.getItem('devToken')
     const devUser = JSON.parse(localStorage.getItem('devUserInfo') || 'null')
-
     if (devToken && devUser) {
       localStorage.setItem('token', devToken)
       localStorage.setItem('userInfo', JSON.stringify(devUser))
       setUserInfo(devUser)
       return
     }
-
-    // 都没有，跳登录
-    message.error('请先登录开发者账号')
+    alert('请先登录开发者账号')
     navigate('/login')
   }, [navigate])
 
-  const loadStats = async () => {
+  // 加载统计
+  const loadStats = useCallback(async () => {
     setLoading(true)
     try {
       const data = await getDevStats()
       setStats(data)
-    } catch (err) {
-      message.error('加载统计数据失败')
+    } catch {
+      console.error('加载统计失败')
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     if (userInfo) loadStats()
-  }, [userInfo])
+  }, [userInfo, loadStats])
 
-  // 快速切换角色：通过 impersonate 接口直接签发 token
+  // 角色切换
   const handleSwitchRole = async (account) => {
     setSwitching(true)
     try {
-      // 备份当前 dev 凭证（切换前保存）
       const curUser = JSON.parse(localStorage.getItem('userInfo') || 'null')
       if (curUser?.role === 'developer') {
         localStorage.setItem('devToken', localStorage.getItem('token'))
         localStorage.setItem('devUserInfo', localStorage.getItem('userInfo'))
       }
-
-      // 如果切回 dev，直接从备份恢复，不需要调接口
       if (account.role === 'developer') {
         const devToken = localStorage.getItem('devToken')
         const devUser = localStorage.getItem('devUserInfo')
@@ -95,17 +85,15 @@ export default function DevDashboard() {
         navigate(0)
         return
       }
-
       const data = await impersonate(account.username)
       localStorage.setItem('token', data.token)
       localStorage.setItem('userInfo', JSON.stringify(data.user))
-      message.success(`已切换为 ${account.label}（${account.username}）`)
 
       if (account.role === 'system_admin') navigate('/audit')
       else if (account.role === 'hotel_admin') navigate('/manage')
       else navigate('/')
     } catch (err) {
-      message.error('切换失败: ' + err.message)
+      alert('切换失败: ' + err.message)
     } finally {
       setSwitching(false)
     }
@@ -116,116 +104,262 @@ export default function DevDashboard() {
     localStorage.removeItem('userInfo')
     localStorage.removeItem('devToken')
     localStorage.removeItem('devUserInfo')
-    message.success('已退出登录')
     navigate('/login')
   }
 
-  return (
-    <Layout className="dev-page">
-      <PageHeader
-        title="Dev Dashboard"
-        roleLabel="开发者"
-        username={userInfo?.username}
-        onLogout={handleLogout}
-        className="dev-header"
-      />
+  // 点击面板 → 加载详情
+  const openDetail = async (type) => {
+    setDetailType(type)
+    setDetailLoading(true)
+    setDetailData([])
+    try {
+      let data
+      if (type === 'users') data = await getAdminUsers('all')
+      else if (type === 'merchants') data = await getAdminUsers('hotel_admin')
+      else if (type === 'admins') data = await getAdminUsers('system_admin')
+      else if (type === 'orders') data = await getAdminOrders('all')
+      else if (type === 'reviews') data = await getAdminReviews()
+      else data = []
+      setDetailData(data)
+    } catch {
+      console.error('加载详情失败')
+    } finally {
+      setDetailLoading(false)
+    }
+  }
+  const closeDetail = () => { setDetailType(null); setDetailData([]) }
 
-      <Content className="dev-content">
-        {/* 数据库统计 */}
-        <Card
-          title={<span><DatabaseOutlined /> 数据库概览</span>}
-          extra={<Button icon={<ReloadOutlined />} onClick={loadStats} loading={loading}>刷新</Button>}
-          style={{ marginBottom: 24 }}
-        >
-          {loading && !stats ? <Spin /> : stats && (
+  const detailTitles = {
+    users: '全部用户', merchants: '商户列表', admins: '管理员列表',
+    orders: '全部订单', reviews: '全部评价',
+  }
+
+  if (!userInfo) return null
+
+  const statCards = stats ? [
+    { key: 'users',     label: '用户总数',   value: stats.users.total,   color: '#1890ff', icon: '👥' },
+    { key: 'merchants', label: '商户人数',   value: stats.users.by_role?.hotel_admin || 0, color: '#722ed1', icon: '🏪' },
+    { key: 'admins',    label: '管理员人数', value: stats.users.by_role?.system_admin || 0, color: '#eb2f96', icon: '🛡️' },
+    { key: 'orders',    label: '订单总数',   value: stats.orders.total,  color: '#fa8c16', icon: '📋' },
+    { key: 'reviews',   label: '评价总数',   value: stats.reviews.total, color: '#13c2c2', icon: '💬' },
+  ] : []
+
+  return (
+    <div className="dev-page">
+      {/* 顶栏 */}
+      <div className="dev-header">
+        <div className="dev-header-left">
+          <span className="dev-header-user">开发者：{userInfo.username}</span>
+          <button className="dev-header-logout" onClick={handleLogout}>退出登录</button>
+        </div>
+        <h2>Dev Dashboard</h2>
+      </div>
+
+      <div className="dev-content">
+        {/* ===== 数据库概览 ===== */}
+        <div className="dev-section">
+          <div className="dev-section-head">
+            <h3>📊 数据库概览</h3>
+            <button className="dev-refresh-btn" onClick={loadStats} disabled={loading}>
+              {loading ? '刷新中...' : '↻ 刷新'}
+            </button>
+          </div>
+
+          {loading && !stats ? (
+            <div className="dev-loading">加载中...</div>
+          ) : stats ? (
             <>
-              <div className="dev-stats">
-                <StatCard label="酒店" value={stats.hotels.total} color="#1890ff" />
-                <StatCard label="用户" value={stats.users.total} color="#52c41a" />
-                <StatCard label="订单" value={stats.orders.total} color="#fa8c16" />
-                <StatCard label="房间" value={stats.rooms.total} color="#722ed1" />
-                <StatCard label="评价" value={stats.reviews.total} color="#eb2f96" />
-              </div>
-              <div className="sub-stats">
-                {stats.hotels.approved > 0 && <div className="sub-stat-item">已上线酒店<span>{stats.hotels.approved}</span></div>}
-                {stats.hotels.pending > 0 && <div className="sub-stat-item">待审核酒店<span>{stats.hotels.pending}</span></div>}
-                {stats.users.by_role && Object.entries(stats.users.by_role).map(([role, cnt]) => (
-                  <div key={role} className="sub-stat-item">{role}<span>{cnt}</span></div>
+              <div className="dev-stat-cards">
+                {statCards.map(c => (
+                  <div
+                    key={c.key}
+                    className="dev-stat-card"
+                    style={{ borderTopColor: c.color }}
+                    onClick={() => openDetail(c.key)}
+                  >
+                    <div className="dev-stat-icon">{c.icon}</div>
+                    <div className="dev-stat-value" style={{ color: c.color }}>{c.value}</div>
+                    <div className="dev-stat-label">{c.label}</div>
+                    <div className="dev-stat-hint">点击查看详情 →</div>
+                  </div>
                 ))}
               </div>
-            </>
-          )}
-        </Card>
 
-        {/* 快速切换角色 */}
-        <Card
-          title={<span><UserSwitchOutlined /> 快速切换角色</span>}
-          style={{ marginBottom: 24 }}
-        >
-          <div className="role-switch-buttons">
-            {TEST_ACCOUNTS.map(account => (
-              <Button
-                key={account.username}
-                type={userInfo?.role === account.role ? 'primary' : 'default'}
-                loading={switching}
-                onClick={() => handleSwitchRole(account)}
+              {/* 酒店状态 */}
+              <div className="dev-sub-stats">
+                <span className="dev-sub-title">酒店状态：</span>
+                <span className="dev-sub-item">总计 <strong>{stats.hotels.total}</strong></span>
+                {stats.hotels.approved > 0 && <span className="dev-sub-item" style={{ color: '#52c41a' }}>已上线 <strong>{stats.hotels.approved}</strong></span>}
+                {stats.hotels.pending > 0 && <span className="dev-sub-item" style={{ color: '#fa8c16' }}>待审核 <strong>{stats.hotels.pending}</strong></span>}
+                {stats.hotels.rejected > 0 && <span className="dev-sub-item" style={{ color: '#f5222d' }}>已拒绝 <strong>{stats.hotels.rejected}</strong></span>}
+                {stats.hotels.offline > 0 && <span className="dev-sub-item" style={{ color: '#8c8c8c' }}>已下线 <strong>{stats.hotels.offline}</strong></span>}
+              </div>
+
+              {/* 订单状态 */}
+              {stats.orders.by_status && (
+                <div className="dev-sub-stats">
+                  <span className="dev-sub-title">订单状态：</span>
+                  {Object.entries(stats.orders.by_status).map(([s, cnt]) => (
+                    <span key={s} className="dev-sub-item">{orderStatusMap[s] || s} <strong>{cnt}</strong></span>
+                  ))}
+                </div>
+              )}
+
+              {/* 用户角色 */}
+              {stats.users.by_role && (
+                <div className="dev-sub-stats">
+                  <span className="dev-sub-title">用户角色：</span>
+                  {Object.entries(stats.users.by_role).map(([role, cnt]) => (
+                    <span key={role} className="dev-sub-item">{
+                      { guest: '旅客', hotel_admin: '商户', system_admin: '管理员', staff: '前台', developer: '开发者' }[role] || role
+                    } <strong>{cnt}</strong></span>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : null}
+        </div>
+
+        {/* ===== 快速切换角色 ===== */}
+        <div className="dev-section">
+          <h3>🔄 快速切换角色</h3>
+          <div className="dev-role-buttons">
+            {TEST_ACCOUNTS.map(acc => (
+              <button
+                key={acc.username}
+                className={`dev-role-btn ${userInfo?.role === acc.role ? 'active' : ''}`}
+                style={{ '--btn-color': acc.color }}
+                disabled={switching}
+                onClick={() => handleSwitchRole(acc)}
               >
-                <Tag color={account.color} style={{ marginRight: 4 }}>{account.label}</Tag>
-                {account.username}
-              </Button>
+                <span className="dev-role-tag" style={{ background: acc.color }}>{acc.label}</span>
+                {acc.username}
+              </button>
             ))}
           </div>
-          <div style={{ marginTop: 12, color: '#999', fontSize: 13 }}>
-            密码均为 123456，开发者可直接切换身份，无需密码
-          </div>
-        </Card>
+          <div className="dev-role-hint">密码均为 123456，开发者可直接切换身份，无需密码</div>
+        </div>
 
-        {/* 页面入口 */}
-        <Card title="页面导航" style={{ marginBottom: 24 }}>
-          <div className="route-group">
-            <h4><MobileOutlined /> 移动端</h4>
-            <div className="route-links">
-              <a href="/" className="dev-route-link">首页 /</a>
-              <a href="/list" className="dev-route-link">酒店列表 /list</a>
-              <a href="/detail/1" className="dev-route-link">酒店详情 /detail/:id</a>
-              <a href="/city-select" className="dev-route-link">城市选择 /city-select</a>
+        {/* ===== 页面导航 ===== */}
+        <div className="dev-section">
+          <h3>🧭 页面导航</h3>
+          <div className="dev-nav-group">
+            <h4>📱 移动端</h4>
+            <div className="dev-nav-links">
+              <a href="/">首页 /</a>
+              <a href="/list">酒店列表 /list</a>
+              <a href="/detail/1">酒店详情 /detail/:id</a>
+              <a href="/city-select">城市选择 /city-select</a>
+              <a href="/orders">我的订单 /orders</a>
+              <a href="/profile">我的 /profile</a>
             </div>
           </div>
-          <div className="route-group">
-            <h4><DesktopOutlined /> PC 端</h4>
-            <div className="route-links">
-              <a href="/login" className="dev-route-link">登录 /login</a>
-              <a href="/manage" className="dev-route-link">酒店管理 /manage</a>
-              <a href="/audit" className="dev-route-link">酒店审核 /audit</a>
-              <a href="/dev" className="dev-route-link">开发者面板 /dev</a>
+          <div className="dev-nav-group">
+            <h4>🖥️ PC 端</h4>
+            <div className="dev-nav-links">
+              <a href="/login">登录 /login</a>
+              <a href="/manage">商户管理 /manage</a>
+              <a href="/audit">酒店审核 /audit</a>
+              <a href="/dev">开发者面板 /dev</a>
             </div>
           </div>
-        </Card>
+        </div>
+      </div>
 
-        {/* API 文档入口 */}
-        <Card title="API 文档" style={{ marginBottom: 24 }}>
-          <Button
-            type="dashed"
-            href="http://localhost:3000/api-docs"
-            target="_blank"
-            disabled
-          >
-            Swagger UI（尚未集成）
-          </Button>
-          <span style={{ marginLeft: 12, color: '#999', fontSize: 13 }}>
-            后续可通过 swagger-jsdoc + swagger-ui-express 集成
-          </span>
-        </Card>
-      </Content>
-    </Layout>
-  )
-}
+      {/* ===== 详情弹窗 ===== */}
+      {detailType && (
+        <div className="dev-modal-overlay" onClick={closeDetail}>
+          <div className="dev-modal" onClick={e => e.stopPropagation()}>
+            <div className="dev-modal-header">
+              <h2>{detailTitles[detailType] || '详情'}</h2>
+              <button className="dev-modal-close" onClick={closeDetail}>×</button>
+            </div>
+            <div className="dev-modal-body">
+              {detailLoading ? (
+                <div className="dev-loading">加载中...</div>
+              ) : detailData.length === 0 ? (
+                <div className="dev-loading">暂无数据</div>
+              ) : (
+                <>
+                  {/* 用户表格 */}
+                  {(detailType === 'users' || detailType === 'merchants' || detailType === 'admins') && (
+                    <table className="dev-detail-table">
+                      <thead>
+                        <tr>
+                          <th>用户名</th><th>姓名</th><th>角色</th><th>邮箱</th><th>电话</th><th>订单数</th><th>注册时间</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {detailData.map(u => (
+                          <tr key={u.id}>
+                            <td>{u.username}</td>
+                            <td>{u.full_name || '-'}</td>
+                            <td><span className={`dev-role-label role-${u.role}`}>{
+                              { guest: '旅客', hotel_admin: '商户', system_admin: '管理员', staff: '前台', developer: '开发者' }[u.role] || u.role
+                            }</span></td>
+                            <td>{u.email}</td>
+                            <td>{u.phone || '-'}</td>
+                            <td>{u.order_count}</td>
+                            <td>{u.created_at ? new Date(u.created_at).toLocaleString('zh-CN') : '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
 
-function StatCard({ label, value, color }) {
-  return (
-    <Card className="dev-stat-card" size="small">
-      <div className="dev-stat-value" style={{ color }}>{value}</div>
-      <div className="dev-stat-label">{label}</div>
-    </Card>
+                  {/* 订单表格 */}
+                  {detailType === 'orders' && (
+                    <table className="dev-detail-table">
+                      <thead>
+                        <tr>
+                          <th>订单号</th><th>用户</th><th>酒店</th><th>房型</th><th>入住</th><th>离店</th><th>金额</th><th>状态</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {detailData.map(o => (
+                          <tr key={o.id}>
+                            <td className="mono">{o.order_no}</td>
+                            <td>{o.user_name}</td>
+                            <td>{o.hotel_name}</td>
+                            <td>{o.room_type_name || '-'}</td>
+                            <td>{o.check_in?.slice(0, 10)}</td>
+                            <td>{o.check_out?.slice(0, 10)}</td>
+                            <td className="price">¥{o.total_price}</td>
+                            <td><span className={`dev-status status-${o.status}`}>{orderStatusMap[o.status] || o.status}</span></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+
+                  {/* 评价列表 */}
+                  {detailType === 'reviews' && (
+                    <div className="dev-reviews">
+                      {detailData.map(r => (
+                        <div key={r.id} className="dev-review-item">
+                          <div className="dev-review-head">
+                            <span className="dev-review-user">{r.user_full_name || r.user_name}</span>
+                            <span className="dev-review-hotel">{r.hotel_name}</span>
+                            <span className="dev-review-stars">{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</span>
+                            <span className="dev-review-time">{r.created_at ? new Date(r.created_at).toLocaleString('zh-CN') : ''}</span>
+                          </div>
+                          <div className="dev-review-content">{r.content}</div>
+                          {r.reply_content && (
+                            <div className="dev-review-reply"><span className="reply-tag">酒店回复：</span>{r.reply_content}</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+            <div className="dev-modal-footer">
+              <button className="dev-btn-close" onClick={closeDetail}>关闭</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
