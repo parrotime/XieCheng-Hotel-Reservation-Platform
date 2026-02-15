@@ -94,16 +94,8 @@ function HotelList() {
     if (price) setPriceRange(price.split(','))
   }, [searchParams])
 
-  // 监听筛选条件变化，自动重新筛选
-  useEffect(() => {
-    if (allHotels.length === 0 && loading) return
-    filterData()
-    setScrollTop(0) // 筛选变化时重置滚动位置
-    if (listRef.current) listRef.current.scrollTop = 0
-  }, [allHotels, selectedCity, searchKey, selectedStar, priceRange, selectedFacilities, sortType])
-
   // 筛选数据（基于 API 返回的数据做客户端筛选）
-  const filterData = () => {
+  const filterData = useCallback(() => {
     let result = [...allHotels]
 
     if (selectedCity) {
@@ -137,7 +129,15 @@ function HotelList() {
 
     result = sortHotels(result, sortType)
     setFilteredHotels(result)
-  }
+  }, [allHotels, selectedCity, searchKey, selectedStar, priceRange, selectedFacilities, sortType])
+
+  // 监听筛选条件变化，自动重新筛选
+  useEffect(() => {
+    if (allHotels.length === 0 && loading) return
+    filterData()
+    setScrollTop(0) // 筛选变化时重置滚动位置
+    if (listRef.current) listRef.current.scrollTop = 0
+  }, [filterData, loading, allHotels.length])
 
   // 排序函数
   const sortHotels = (data, type) => {

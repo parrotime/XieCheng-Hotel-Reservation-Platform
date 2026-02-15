@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react'
-import { describe, test, expect, vi } from 'vitest'
+import { describe, test, expect, vi, beforeAll, afterAll } from 'vitest'
 import ErrorBoundary from '../components/ErrorBoundary'
 
 // 故意抛错的子组件

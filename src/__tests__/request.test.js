@@ -26,7 +26,7 @@ vi.mock('axios', () => {
 })
 
 // 在 mock 之后 import
-let request
+let request // eslint-disable-line no-unused-vars
 let requestInterceptor
 let responseSuccessHandler
 let responseErrorHandler

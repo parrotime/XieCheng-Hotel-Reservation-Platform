@@ -122,7 +122,7 @@ function HotelAudit() {
       await Promise.all(pending.map(h => updateHotelStatus(h.id, { status: 'approved' })))
       setSelectedIds(new Set())
       loadHotels()
-    } catch (err) {
+    } catch {
       alert('部分操作失败，请刷新重试')
     } finally {
       setBatchLoading(false)
@@ -146,7 +146,7 @@ function HotelAudit() {
       setBatchRejectList(null)
       setSelectedIds(new Set())
       loadHotels()
-    } catch (err) {
+    } catch {
       alert('部分操作失败，请刷新重试')
     } finally {
       setBatchLoading(false)

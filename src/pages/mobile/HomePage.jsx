@@ -56,25 +56,20 @@ function HomePage() {
 
   const [searchKey, setSearchKey] = useState('')
   const swiperRef = useRef(null)
-  const [selectedCity, setSelectedCity] = useState(
-    () => sessionStorage.getItem('selectedCity') || '上海'
+  const [selectedCity] = useState(
+    () => location.state?.selectedCity || sessionStorage.getItem('selectedCity') || '上海'
   )
-  const [searchHistory, setSearchHistory] = useState([])
+  const [searchHistory, setSearchHistory] = useState(
+    () => JSON.parse(localStorage.getItem('searchHistory') || '[]')
+  )
 
-  // 从城市选择页返回时接收选中的城市
+  // 从城市选择页返回时持久化并清理 navigation state
   useEffect(() => {
     if (location.state?.selectedCity) {
-      setSelectedCity(location.state.selectedCity)
       sessionStorage.setItem('selectedCity', location.state.selectedCity)
       window.history.replaceState({}, '')
     }
   }, [location.state])
-
-  // 加载搜索历史
-  useEffect(() => {
-    const history = JSON.parse(localStorage.getItem('searchHistory') || '[]')
-    setSearchHistory(history)
-  }, [])
 
   // 搜索处理
   const handleSearch = () => {

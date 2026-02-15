@@ -25,6 +25,16 @@ function PayPage() {
     }
   }, [id, order, navigate])
 
+  const handleTimeout = useCallback(async () => {
+    try {
+      await cancelOrder(id)
+      Toast.show({ content: '订单已超时取消' })
+      navigate('/orders')
+    } catch {
+      // ignore
+    }
+  }, [id, navigate])
+
   // 倒计时
   useEffect(() => {
     if (!order || order.status !== 'pending') return
@@ -39,17 +49,7 @@ function PayPage() {
       })
     }, 1000)
     return () => clearInterval(timer)
-  }, [order])
-
-  const handleTimeout = useCallback(async () => {
-    try {
-      await cancelOrder(id)
-      Toast.show({ content: '订单已超时取消' })
-      navigate('/orders')
-    } catch {
-      // ignore
-    }
-  }, [id, navigate])
+  }, [order, handleTimeout])
 
   // 格式化倒计时
   const formatCountdown = (s) => {
@@ -77,7 +77,7 @@ function PayPage() {
       await cancelOrder(id)
       Toast.show({ content: '订单已取消' })
       navigate('/orders')
-    } catch (err) {
+    } catch {
       Toast.show({ icon: 'fail', content: '取消失败' })
     }
   }

@@ -64,7 +64,7 @@ function HotelDetail() {
         }
         return data
       })
-    } catch (err) {
+    } catch {
       if (!silent) {
         Toast.show({ icon: 'fail', content: '酒店不存在' })
         setTimeout(() => navigate('/list'), 1500)

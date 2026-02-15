@@ -11,19 +11,21 @@ import { message } from 'antd'
  */
 export function useAuth(requiredRole, errorMessage) {
   const navigate = useNavigate()
-  const [userInfo, setUserInfo] = useState(null)
-
-  useEffect(() => {
+  const [userInfo] = useState(() => {
     const token = localStorage.getItem('token')
     const user = JSON.parse(localStorage.getItem('userInfo') || 'null')
+    if (token && user && (user.role === requiredRole || user.role === 'developer')) {
+      return user
+    }
+    return null
+  })
 
-    if (!token || !user || (user.role !== requiredRole && user.role !== 'developer')) {
+  useEffect(() => {
+    if (!userInfo) {
       message.error(errorMessage)
       navigate('/login')
-      return
     }
-    setUserInfo(user)
-  }, [navigate, requiredRole, errorMessage])
+  }, [userInfo, navigate, errorMessage])
 
   const handleLogout = () => {
     localStorage.removeItem('token')

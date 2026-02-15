@@ -23,14 +23,17 @@ function OrderDetail() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    setLoading(true)
+    let cancelled = false
     getOrderById(id)
-      .then(setOrder)
+      .then(data => { if (!cancelled) setOrder(data) })
       .catch((err) => {
-        Toast.show({ icon: 'fail', content: err.message || '订单不存在' })
-        navigate('/orders')
+        if (!cancelled) {
+          Toast.show({ icon: 'fail', content: err.message || '订单不存在' })
+          navigate('/orders')
+        }
       })
-      .finally(() => setLoading(false))
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
   }, [id, navigate])
 
   const handleCancel = async () => {

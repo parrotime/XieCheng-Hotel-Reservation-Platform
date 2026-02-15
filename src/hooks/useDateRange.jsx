@@ -65,6 +65,7 @@ export function DateRangeProvider({ children }) {
  * 入住/退房日期选择 Hook
  * 从 Context 读取共享日期状态，首页/列表页/详情页自动同步
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useDateRange() {
   const ctx = useContext(DateRangeContext)
   if (!ctx) {
